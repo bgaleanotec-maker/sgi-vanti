@@ -1,0 +1,80 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-9">
+            <div class="card shadow-sm">
+                <div class="card-header">
+                    <h4>
+                        {% if current_user.rol == 'ejecutivo' %}
+                            Editar Datos de la Carta
+                        {% else %}
+                            Gestionar Carta
+                        {% endif %}
+                    </h4>
+                    <h6 class="card-subtitle mb-2 text-muted">Orden: {{ tarea.orden }} | Contrato: {{ tarea.cuenta_contrato }}</h6>
+                </div>
+                <div class="card-body">
+                    <form method="POST">
+                        <div class="row">
+                            <div class="col-md-12 mb-3">
+                                <label for="nombre_cliente" class="form-label">Nombre Completo del Cliente</label>
+                                <!-- CAMBIO: Se añade 'tarea.solicitante' como valor por defecto -->
+                                <input type="text" class="form-control" id="nombre_cliente" name="nombre_cliente" value="{{ tarea.carta.nombre_cliente or tarea.solicitante or '' }}" required>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="cedula_cliente" class="form-label">Cédula del Cliente</label>
+                                <input type="text" class="form-control" id="cedula_cliente" name="cedula_cliente" value="{{ tarea.carta.cedula_cliente or '' }}" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="lugar_expedicion" class="form-label">Lugar de Expedición</label>
+                                <input type="text" class="form-control" id="lugar_expedicion" name="lugar_expedicion" value="{{ tarea.carta.lugar_expedicion or '' }}" required>
+                            </div>
+                        </div>
+                        <hr>
+                        <div class="row">
+                             <div class="col-md-6 mb-3">
+                                <label for="distancia_acometida" class="form-label">Distancia de la acometida (Metros)</label>
+                                <input type="number" step="0.01" class="form-control" id="distancia_acometida" name="distancia_acometida" value="{{ tarea.carta.distancia_acometida or '' }}" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="tipo_avenida" class="form-label">Tipo de avenida</label>
+                                <select class="form-select" id="tipo_avenida" name="tipo_avenida" required>
+                                    <option value="" {% if not tarea.carta.tipo_avenida %}selected{% endif %} disabled>Seleccione una opción...</option>
+                                    <option value="Anden" {% if tarea.carta.tipo_avenida == 'Anden' %}selected{% endif %}>Andén</option>
+                                    <option value="Via" {% if tarea.carta.tipo_avenida == 'Via' %}selected{% endif %}>Vía</option>
+                                </select>
+                            </div>
+                        </div>
+                         <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="direccion_predio" class="form-label">Dirección del Predio</label>
+                                <input type="text" class="form-control" id="direccion_predio" name="direccion_predio" value="{{ tarea.carta.direccion_predio or tarea.direccion }}" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="coordenadas_predio" class="form-label">Coordenadas del Predio</label>
+                                <input type="text" class="form-control" id="coordenadas_predio" name="coordenadas_predio" value="{{ tarea.carta.coordenadas_predio or '' }}" placeholder="Ej: 4.598, -74.076">
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="observaciones_puntuales" class="form-label">Observaciones Puntuales</label>
+                            <textarea class="form-control" id="observaciones_puntuales" name="observaciones_puntuales" rows="5" required>{{ tarea.carta.observaciones_puntuales or '' }}</textarea>
+                        </div>
+                        <div class="d-flex justify-content-end">
+                            {% if current_user.rol == 'ejecutivo' %}
+                                <a href="{{ url_for('ejecutivo.dashboard') }}" class="btn btn-secondary me-2">Cancelar</a>
+                                <button type="submit" class="btn btn-primary">Guardar Cambios</button>
+                            {% else %}
+                                <a href="{{ url_for('contratista.dashboard') }}" class="btn btn-secondary me-2">Cancelar</a>
+                                <button type="submit" class="btn btn-success">Enviar a Revisión</button>
+                            {% endif %}
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

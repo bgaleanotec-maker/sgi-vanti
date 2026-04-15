@@ -1,0 +1,76 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h3>Configuración del Asistente Virtual Gema</h3>
+        <a href="{{ url_for('admin.dashboard') }}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> Volver al Panel
+        </a>
+    </div>
+
+    <div class="row">
+        <!-- Columna para configurar instrucciones -->
+        <div class="col-lg-7 mb-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-pencil-square"></i> Configurar Instrucciones del Agente</h5>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted">
+                        Define la personalidad, el conocimiento y las reglas de Gema. Este texto es la directiva principal que seguirá el asistente en cada conversación.
+                    </p>
+                    <form method="POST">
+                        <div class="mb-3">
+                            <textarea class="form-control" name="instrucciones" rows="15" placeholder="Escribe aquí las instrucciones base para Gema...">{{ instrucciones }}</textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100">
+                            <i class="bi bi-save-fill"></i> Guardar Instrucciones
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Columna para la Base de Conocimiento -->
+        <div class="col-lg-5 mb-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-brain"></i> Base de Conocimiento (Entrenamiento)</h5>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted">
+                        Sube archivos <code>.docx</code> o <code>.xlsx</code> con manuales o datos. Gema usará esta información para dar respuestas más precisas.
+                    </p>
+                    <form method="POST" enctype="multipart/form-data" class="mb-4">
+                        <div class="input-group">
+                            <input class="form-control" type="file" id="knowledge_file" name="knowledge_file" accept=".xlsx, .docx" required>
+                            <button type="submit" class="btn btn-success">
+                                <i class="bi bi-upload"></i> Cargar
+                            </button>
+                        </div>
+                    </form>
+                    
+                    <h6>Documentos Cargados:</h6>
+                    {% if knowledge_files %}
+                        <ul class="list-group">
+                            {% for file in knowledge_files %}
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                <span><i class="bi bi-file-earmark-text"></i> {{ file }}</span>
+                                <form action="{{ url_for('assistant.eliminar_conocimiento', filename=file) }}" method="POST" onsubmit="return confirm('¿Estás seguro de que deseas eliminar este archivo de la base de conocimiento?');">
+                                    <button type="submit" class="btn btn-sm btn-outline-danger" title="Eliminar archivo">
+                                        <i class="bi bi-trash-fill"></i>
+                                    </button>
+                                </form>
+                            </li>
+                            {% endfor %}
+                        </ul>
+                    {% else %}
+                        <p class="text-center text-muted mt-3">Aún no se han cargado documentos.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

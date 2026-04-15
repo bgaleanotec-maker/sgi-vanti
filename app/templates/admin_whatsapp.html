@@ -1,0 +1,77 @@
+</div>
+<div class="ml-3">
+    <h3 class="text-sm font-medium text-blue-800">Configuración</h3>
+    <div class="mt-2 text-sm text-blue-700">
+        <p>Para usar tu propio número, configura Ultramsg y agrega estas variables a tu archivo
+            <code>.env</code>:
+        </p>
+        <ul class="list-disc pl-5 mt-1 space-y-1">
+            <li><code>ULTRAMSG_INSTANCE_ID</code> (ej: instance12345)</li>
+            <li><code>ULTRAMSG_TOKEN</code> (ej: token123)</li>
+        </ul>
+    </div>
+</div>
+</div>
+</div>
+
+<form method="POST" class="space-y-6">
+    <h4 class="text-sm font-medium leading-6 text-gray-900">Probar Envío de Mensaje</h4>
+
+    <!-- User Selection Dropdown -->
+    <div>
+        <label for="user_select" class="block text-sm font-medium leading-6 text-gray-900">Seleccionar
+            Usuario (Opcional)</label>
+        <div class="mt-2">
+            <select id="user_select" onchange="updatePhoneNumber(this.value)"
+                class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-brand-600 sm:text-sm sm:leading-6">
+                <option value="">-- Seleccionar un usuario --</option>
+                {% for user in users %}
+                <option value="{{ user.celular }}">{{ user.username }} ({{ user.bp_firma or 'Sin BP' }}) -
+                    {{ user.celular }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <p class="mt-2 text-sm text-gray-500">Selecciona un usuario para rellenar automáticamente el número.
+        </p>
+    </div>
+
+    <!-- Number Input -->
+    <div>
+        <label for="test_number" class="block text-sm font-medium leading-6 text-gray-900">Número de
+            Destino</label>
+        <div class="mt-2">
+            <input type="text" name="test_number" id="test_number" required
+                class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-brand-600 sm:text-sm sm:leading-6"
+                placeholder="573001234567">
+        </div>
+        <p class="mt-2 text-sm text-gray-500">Ingresa el número con código de país, sin el símbolo +.</p>
+    </div>
+
+    <!-- Message Input -->
+    <div>
+        <label for="test_message" class="block text-sm font-medium leading-6 text-gray-900">Mensaje</label>
+        <div class="mt-2">
+            <textarea name="test_message" id="test_message" rows="3" required
+                class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-brand-600 sm:text-sm sm:leading-6">Hola, esto es una prueba desde SGI Vanti con Ultramsg.</textarea>
+        </div>
+    </div>
+
+    <div class="flex items-center justify-end border-t border-gray-200 pt-6">
+        <button type="submit"
+            class="rounded-md bg-green-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-green-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-green-600">
+            <i class="bi bi-send mr-2"></i> Enviar Prueba
+        </button>
+    </div>
+</form>
+</div>
+</div>
+</div>
+
+<script>
+    function updatePhoneNumber(number) {
+        if (number) {
+            document.getElementById('test_number').value = number;
+        }
+    }
+</script>
+{% endblock %}

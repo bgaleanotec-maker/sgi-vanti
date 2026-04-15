@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto space-y-6">
+    <div>
+        <h1 class="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-3">
+            <div class="h-10 w-10 rounded-xl bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center shadow-lg">
+                <i class="bi bi-person-gear text-white"></i>
+            </div>
+            Mi Perfil
+        </h1>
+        <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Actualiza tu informacion y preferencias de notificacion.</p>
+    </div>
+
+    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm ring-1 ring-gray-200 dark:ring-gray-700 p-8">
+        <form method="POST" class="space-y-6">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Usuario</label>
+                    <input type="text" value="{{ user.username }}" disabled
+                        class="block w-full rounded-lg border-0 py-2.5 bg-gray-50 dark:bg-gray-700 text-gray-500 dark:text-gray-400 ring-1 ring-gray-200 dark:ring-gray-600 sm:text-sm">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Rol</label>
+                    <input type="text" value="{{ user.rol|capitalize }}" disabled
+                        class="block w-full rounded-lg border-0 py-2.5 bg-gray-50 dark:bg-gray-700 text-gray-500 dark:text-gray-400 ring-1 ring-gray-200 dark:ring-gray-600 sm:text-sm">
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nombre completo</label>
+                <input type="text" name="full_name" value="{{ user.full_name or '' }}" placeholder="Tu nombre completo"
+                    class="block w-full rounded-lg border-0 py-2.5 dark:bg-gray-700 dark:text-white ring-1 ring-gray-300 dark:ring-gray-600 focus:ring-2 focus:ring-brand-600 sm:text-sm">
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        <i class="bi bi-envelope mr-1"></i> Correo electronico
+                    </label>
+                    <input type="email" name="email" value="{{ user.email or '' }}" placeholder="tu@correo.com"
+                        class="block w-full rounded-lg border-0 py-2.5 dark:bg-gray-700 dark:text-white ring-1 ring-gray-300 dark:ring-gray-600 focus:ring-2 focus:ring-brand-600 sm:text-sm">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        <i class="bi bi-whatsapp mr-1"></i> Celular (WhatsApp)
+                    </label>
+                    <input type="text" name="celular" value="{{ user.celular or '' }}" placeholder="573001234567"
+                        class="block w-full rounded-lg border-0 py-2.5 dark:bg-gray-700 dark:text-white ring-1 ring-gray-300 dark:ring-gray-600 focus:ring-2 focus:ring-brand-600 sm:text-sm">
+                    <p class="mt-1 text-xs text-gray-400">Incluir codigo de pais (ej: 57 para Colombia)</p>
+                </div>
+            </div>
+
+            <!-- Notification preferences -->
+            <div class="border-t border-gray-200 dark:border-gray-700 pt-6">
+                <h3 class="text-sm font-semibold text-gray-900 dark:text-white mb-4">Preferencias de Notificacion</h3>
+                <div class="space-y-3">
+                    <label class="flex items-center gap-3 cursor-pointer">
+                        <input type="checkbox" name="notify_email" {% if user.notify_email %}checked{% endif %}
+                            class="h-4 w-4 rounded border-gray-300 dark:border-gray-600 text-brand-600 focus:ring-brand-500">
+                        <div>
+                            <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Notificaciones por Email</span>
+                            <p class="text-xs text-gray-400">Recibir actualizaciones de tus tareas por correo</p>
+                        </div>
+                    </label>
+                    <label class="flex items-center gap-3 cursor-pointer">
+                        <input type="checkbox" name="notify_whatsapp" {% if user.notify_whatsapp %}checked{% endif %}
+                            class="h-4 w-4 rounded border-gray-300 dark:border-gray-600 text-brand-600 focus:ring-brand-500">
+                        <div>
+                            <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Notificaciones por WhatsApp</span>
+                            <p class="text-xs text-gray-400">Recibir alertas por WhatsApp Business</p>
+                        </div>
+                    </label>
+                </div>
+            </div>
+
+            <div class="flex justify-end">
+                <button type="submit" class="rounded-lg bg-gradient-to-r from-brand-600 to-brand-700 px-6 py-2.5 text-sm font-semibold text-white shadow-lg shadow-brand-500/25 hover:from-brand-500 hover:to-brand-600 transition-all">
+                    <i class="bi bi-check-lg mr-1"></i> Guardar Cambios
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% include '_asistente.html' %}
+{% endblock %}

@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="space-y-8">
+    <div>
+        <h1 class="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-3">
+            <div class="h-10 w-10 rounded-xl bg-gradient-to-br from-brand-500 to-brand-700 flex items-center justify-center shadow-lg">
+                <i class="bi bi-plug-fill text-white"></i>
+            </div>
+            Panel de Integraciones
+        </h1>
+        <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Configura los servicios externos del sistema (email, WhatsApp, IA).</p>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {% for service_name, service in services.items() %}
+        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm ring-1 ring-gray-200 dark:ring-gray-700 overflow-hidden" x-data="{ expanded: false }">
+            <!-- Header -->
+            <div class="px-6 py-5 flex items-center justify-between cursor-pointer" @click="expanded = !expanded">
+                <div class="flex items-center gap-3">
+                    <div class="h-10 w-10 rounded-xl flex items-center justify-center text-lg
+                        {% if service.color == 'blue' %}bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400
+                        {% elif service.color == 'green' %}bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400
+                        {% elif service.color == 'purple' %}bg-purple-100 text-purple-600 dark:bg-purple-900/30 dark:text-purple-400
+                        {% endif %}">
+                        <i class="bi {{ service.icon }}"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-sm font-semibold text-gray-900 dark:text-white">{{ service.display_name }}</h3>
+                        <p class="text-xs text-gray-500 dark:text-gray-400">{{ service.description }}</p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-2">
+                    {% if service.configured %}
+                    <span class="inline-flex items-center rounded-full bg-emerald-100 dark:bg-emerald-900/30 px-2.5 py-0.5 text-xs font-medium text-emerald-700 dark:text-emerald-400">
+                        <i class="bi bi-check-circle-fill mr-1"></i> Activo
+                    </span>
+                    {% else %}
+                    <span class="inline-flex items-center rounded-full bg-gray-100 dark:bg-gray-700 px-2.5 py-0.5 text-xs font-medium text-gray-600 dark:text-gray-400">
+                        <i class="bi bi-circle mr-1"></i> Sin configurar
+                    </span>
+                    {% endif %}
+                    <i class="bi bi-chevron-down text-gray-400 transition-transform" :class="{ 'rotate-180': expanded }"></i>
+                </div>
+            </div>
+
+            <!-- Config Form -->
+            <div x-show="expanded" x-collapse>
+                <div class="border-t border-gray-200 dark:border-gray-700 px-6 py-5 space-y-4">
+                    <form method="POST" action="{{ url_for('admin.guardar_integracion', service_name=service_name) }}" class="space-y-4">
+                        {% for field in service.fields %}
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                {{ field.label }}
+                                {% if field.required %}<span class="text-red-500">*</span>{% endif %}
+                            </label>
+                            <input type="{{ field.field_type }}" name="{{ field.key_name }}"
+                                placeholder="{% if field.configured %}{{ field.masked_value }}{% else %}{{ field.placeholder }}{% endif %}"
+                                class="block w-full rounded-lg border-0 py-2 text-gray-900 dark:text-white dark:bg-gray-700 shadow-sm ring-1 ring-inset ring-gray-300 dark:ring-gray-600 placeholder:text-gray-400 focus:ring-2 focus:ring-brand-600 sm:text-sm">
+                            {% if field.configured %}
+                            <p class="mt-1 text-xs text-gray-400">Valor actual: {{ field.masked_value }}</p>
+                            {% endif %}
+                        </div>
+                        {% endfor %}
+
+                        <div class="flex gap-2 pt-2">
+                            <button type="submit" class="flex-1 rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700 transition-colors">
+                                <i class="bi bi-check-lg mr-1"></i> Guardar
+                            </button>
+                        </div>
+                    </form>
+
+                    <!-- Test Form -->
+                    <div class="border-t border-gray-200 dark:border-gray-700 pt-4">
+                        <p class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">Probar Integracion</p>
+                        <form method="POST" action="{{ url_for('admin.test_integracion', service_name=service_name) }}" class="flex gap-2">
+                            {% if service_name == 'sendgrid' %}
+                            <input type="email" name="test_email" placeholder="Email de prueba" class="flex-1 rounded-lg border-0 py-2 text-sm dark:bg-gray-700 dark:text-white ring-1 ring-gray-300 dark:ring-gray-600 focus:ring-2 focus:ring-brand-600">
+                            {% elif service_name == 'ultramsg' %}
+                            <input type="text" name="test_number" placeholder="573001234567" class="flex-1 rounded-lg border-0 py-2 text-sm dark:bg-gray-700 dark:text-white ring-1 ring-gray-300 dark:ring-gray-600 focus:ring-2 focus:ring-brand-600">
+                            {% endif %}
+                            <button type="submit" class="rounded-lg bg-gray-100 dark:bg-gray-700 px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">
+                                <i class="bi bi-send mr-1"></i> Test
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

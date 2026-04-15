@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="flex min-h-full flex-col justify-center py-12 sm:px-6 lg:px-8">
+    <div class="sm:mx-auto sm:w-full sm:max-w-md">
+        <div class="flex h-16 w-16 mx-auto items-center justify-center rounded-2xl bg-gradient-to-br from-brand-500 to-brand-700 shadow-xl shadow-brand-500/30">
+            <i class="bi bi-lightning-charge-fill text-white text-3xl"></i>
+        </div>
+        <h2 class="mt-6 text-center text-3xl font-bold tracking-tight text-gray-900 dark:text-white">Bienvenido de nuevo</h2>
+        <p class="mt-2 text-center text-sm text-gray-600 dark:text-gray-400">
+            Ingresa tus credenciales para acceder al SGI
+        </p>
+    </div>
+
+    <div class="mt-10 sm:mx-auto sm:w-full sm:max-w-[480px]">
+        <div class="bg-white dark:bg-gray-800 px-6 py-12 shadow-xl ring-1 ring-gray-900/5 dark:ring-white/10 sm:rounded-2xl sm:px-12">
+            <form class="space-y-6" method="POST">
+                <div>
+                    <label for="username" class="block text-sm font-medium text-gray-900 dark:text-gray-200">Usuario</label>
+                    <div class="mt-2 relative rounded-md shadow-sm">
+                        <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+                            <i class="bi bi-person text-gray-400"></i>
+                        </div>
+                        <input id="username" name="username" type="text" required
+                            class="block w-full rounded-lg border-0 py-2.5 pl-10 text-gray-900 dark:text-white dark:bg-gray-700 shadow-sm ring-1 ring-inset ring-gray-300 dark:ring-gray-600 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-brand-600 sm:text-sm"
+                            placeholder="Ingresa tu usuario">
+                    </div>
+                </div>
+
+                <div>
+                    <label for="password" class="block text-sm font-medium text-gray-900 dark:text-gray-200">Contrasena</label>
+                    <div class="mt-2 relative rounded-md shadow-sm">
+                        <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+                            <i class="bi bi-lock text-gray-400"></i>
+                        </div>
+                        <input id="password" name="password" type="password" required
+                            class="block w-full rounded-lg border-0 py-2.5 pl-10 text-gray-900 dark:text-white dark:bg-gray-700 shadow-sm ring-1 ring-inset ring-gray-300 dark:ring-gray-600 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-brand-600 sm:text-sm"
+                            placeholder="********">
+                    </div>
+                </div>
+
+                <div class="flex items-center justify-between">
+                    <div class="text-sm">
+                        <a href="{{ url_for('auth.reset_password_request') }}" class="font-semibold text-brand-600 hover:text-brand-500">Olvidaste tu contrasena?</a>
+                    </div>
+                </div>
+
+                <div>
+                    <button type="submit" class="flex w-full justify-center rounded-lg bg-gradient-to-r from-brand-600 to-brand-700 px-3 py-2.5 text-sm font-semibold text-white shadow-lg shadow-brand-500/25 hover:from-brand-500 hover:to-brand-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600 transition-all duration-200 transform hover:scale-[1.02]">
+                        <i class="bi bi-box-arrow-in-right mr-2"></i> Ingresar
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Documentation Link -->
+        <div class="mt-8 text-center">
+            <a href="{{ url_for('auth.documentacion') }}" class="inline-flex items-center gap-2 rounded-xl bg-white dark:bg-gray-800 px-6 py-3 text-sm font-medium text-brand-600 dark:text-brand-400 shadow-sm ring-1 ring-gray-200 dark:ring-gray-700 hover:bg-brand-50 dark:hover:bg-gray-700 transition-all">
+                <i class="bi bi-book text-lg"></i>
+                <span>Guia de Usuario y Documentacion</span>
+                <i class="bi bi-arrow-right text-xs"></i>
+            </a>
+        </div>
+
+        <p class="mt-6 text-center text-xs text-gray-500 dark:text-gray-600">
+            &copy; 2025-2026 Vanti S.A. ESP - Todos los derechos reservados.
+        </p>
+    </div>
+</div>
+{% endblock %}

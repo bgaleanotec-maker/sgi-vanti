@@ -1,0 +1,12 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-5">
+    <h3>Cargar archivo de imposibilidades (Excel .xlsx)</h3>
+    <form method="POST" enctype="multipart/form-data">
+        <div class="mb-3">
+            <input type="file" name="archivo_excel" class="form-control" accept=".xlsx" required>
+        </div>
+        <button class="btn btn-primary" type="submit">Cargar y procesar</button>
+    </form>
+</div>
+{% endblock %}

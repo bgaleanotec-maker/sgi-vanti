@@ -1,0 +1,112 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h3>Panel de Analítica</h3>
+        <a href="{{ url_for('admin.dashboard') }}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> Volver al Panel
+        </a>
+    </div>
+
+    <!-- Incluir el formulario de filtros -->
+    {% include '_filtros.html' %}
+
+    <!-- Tarjetas de resumen -->
+    <div class="row">
+        <!-- ... (Las 4 tarjetas de resumen van aquí, sin cambios) ... -->
+    </div>
+
+    <!-- Mapa y Gráfico -->
+    <div class="row mt-4">
+        <div class="col-lg-8 mb-4">
+            <div class="card shadow">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Mapa de Distribución (Filtrado)</h6>
+                </div>
+                <div class="card-body">
+                    <!-- CONTENEDOR PARA EL IFRAME DEL MAPA -->
+                    <div id="mapFrameContainer" style="height: 500px; border: 1px solid #ddd; border-radius: 0.5rem; display: none;">
+                        <iframe id="mapFrame" style="width: 100%; height: 100%; border: none;"></iframe>
+                    </div>
+                    <div id="mapPlaceholder" class="text-center py-5">
+                        <p>El mapa se mostrará aquí.</p>
+                        <button id="showMapBtn" class="btn btn-primary btn-lg">
+                            <i class="bi bi-map-fill"></i> Cargar Mapa con Filtros Actuales
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-4 mb-4">
+            <div class="card shadow">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Distribución de Estados (Gráfico)</h6>
+                </div>
+                <div class="card-body">
+                    <canvas id="tareasChart" style="min-height: 500px;"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        // --- SCRIPT PARA CARGAR EL MAPA EN EL IFRAME ---
+        const showMapBtn = document.getElementById('showMapBtn');
+        const mapFrameContainer = document.getElementById('mapFrameContainer');
+        const mapPlaceholder = document.getElementById('mapPlaceholder');
+        const mapFrame = document.getElementById('mapFrame');
+
+        showMapBtn.addEventListener('click', function() {
+            // 1. Recoger los valores de los filtros
+            const estado = document.getElementById('estado_tarea').value;
+            const contrato = document.getElementById('cuenta_contrato').value;
+            const orden = document.getElementById('orden').value;
+            const firma = document.getElementById('bp_firma') ? document.getElementById('bp_firma').value : '';
+
+            // 2. Construir la URL con los parámetros
+            const params = new URLSearchParams();
+            if (estado) params.append('estado_tarea', estado);
+            if (contrato) params.append('cuenta_contrato', contrato);
+            if (orden) params.append('orden', orden);
+            if (firma) params.append('bp_firma', firma);
+            
+            const mapUrl = `{{ url_for('admin.mapa_geografico') }}?${params.toString()}`;
+
+            // 3. Cargar la URL en el iframe y mostrarlo
+            mapFrame.src = mapUrl;
+            mapPlaceholder.style.display = 'none';
+            mapFrameContainer.style.display = 'block';
+        });
+
+        // --- SCRIPT DEL GRÁFICO (sin cambios) ---
+        const ctx = document.getElementById('tareasChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: ['Total', 'Pendientes', 'Gestionadas', 'Cerradas'],
+                datasets: [{
+                    label: 'Cantidad de Tareas',
+                    data: [{{ total }}, {{ pendientes }}, {{ gestionadas }}, {{ cerradas }}],
+                    backgroundColor: ['#4e73df', '#f6c23e', '#36b9cc', '#1cc88a'],
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: { y: { beginAtZero: true, ticks: { precision: 0 } } },
+                plugins: { legend: { display: false } }
+            }
+        });
+    });
+</script>
+<style>
+.card .border-left-primary { border-left: .25rem solid #4e73df !important; }
+.card .border-left-success { border-left: .25rem solid #1cc88a !important; }
+.card .border-left-info { border-left: .25rem solid #36b9cc !important; }
+.card .border-left-warning { border-left: .25rem solid #f6c23e !important; }
+</style>
+{% endblock %}

@@ -1,0 +1,56 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h3>Mis Cartas Asignadas (Ejecutivo)</h3>
+        <a href="{{ url_for('ejecutivo.descargar_cartas_zip') }}" class="btn btn-success">
+            <i class="bi bi-file-earmark-zip-fill"></i> Descargar Todas las Pendientes (.zip)
+        </a>
+    </div>
+    <table class="table table-bordered table-striped table-hover">
+        <thead class="table-dark">
+            <tr>
+                <th>Orden</th>
+                <th>Contrato</th>
+                <th>Estado</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for tarea in tareas %}
+            <tr>
+                <td>{{ tarea.orden }}</td>
+                <td>{{ tarea.cuenta_contrato }}</td>
+                <td>
+                    <span class="badge rounded-pill 
+                        {% if tarea.estado_tarea == 'carta_pendiente_revision' %} bg-info text-dark
+                        {% elif tarea.estado_tarea == 'carta_enviada' %} bg-success
+                        {% else %} bg-secondary {% endif %}">
+                        {{ tarea.estado_tarea.replace('_', ' ')|capitalize }}
+                    </span>
+                </td>
+                <td>
+                    <div class="btn-group" role="group">
+                        <a href="{{ url_for('ejecutivo.gestionar_carta', id=tarea.id) }}" class="btn btn-primary btn-sm" title="Editar/Ver Carta">
+                            <i class="bi bi-pencil-fill"></i> Editar
+                        </a>
+                        <a href="{{ url_for('ejecutivo.descargar_carta_word', id=tarea.id) }}" class="btn btn-info btn-sm" title="Descargar en Word">
+                            <i class="bi bi-file-earmark-word-fill"></i> Word
+                        </a>
+                        {% if tarea.estado_tarea != 'carta_enviada' %}
+                        <form action="{{ url_for('ejecutivo.marcar_carta_enviada', id=tarea.id) }}" method="POST" class="d-inline">
+                            <button type="submit" class="btn btn-success btn-sm" title="Marcar como Enviada">
+                                <i class="bi bi-send-check-fill"></i> Marcar Enviada
+                            </button>
+                        </form>
+                        {% endif %}
+                    </div>
+                </td>
+            </tr>
+            {% else %}
+            <tr><td colspan="4" class="text-center">No tienes cartas asignadas.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

@@ -1,0 +1,67 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="mx-auto max-w-2xl space-y-8">
+    <!-- Header with Gradient -->
+    <div class="relative overflow-hidden rounded-2xl bg-gradient-to-r from-brand-600 to-blue-600 px-6 py-8 shadow-xl">
+        <div class="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10">
+        </div>
+        <div class="relative z-10">
+            <h2 class="text-2xl font-bold text-white sm:text-3xl">Cargar Nuevas Tareas</h2>
+            <p class="mt-2 text-brand-100">Importa asignaciones desde un archivo Excel.</p>
+        </div>
+    </div>
+
+    <div class="bg-white shadow-sm ring-1 ring-gray-900/5 sm:rounded-xl overflow-hidden">
+        <div class="px-4 py-6 sm:px-6 border-b border-gray-200 bg-gray-50 rounded-t-xl">
+            <h3 class="text-base font-semibold leading-6 text-gray-900 flex items-center gap-2">
+                <i class="bi bi-cloud-upload-fill text-brand-600"></i> Subir Archivo de Tareas
+            </h3>
+        </div>
+        <div class="px-4 py-6 sm:px-6">
+            <!-- Template Downloads -->
+            <div class="rounded-xl bg-brand-50 dark:bg-brand-900/20 p-4 mb-6 border border-brand-200 dark:border-brand-800">
+                <p class="text-sm font-medium text-brand-800 dark:text-brand-300 mb-3">
+                    <i class="bi bi-download mr-1"></i> Descarga las plantillas antes de cargar:
+                </p>
+                <div class="flex flex-wrap gap-2">
+                    <a href="{{ url_for('api.download_imposibilidades_template') }}" class="inline-flex items-center rounded-lg bg-white dark:bg-gray-700 px-3 py-1.5 text-xs font-medium text-brand-700 dark:text-brand-400 ring-1 ring-brand-200 dark:ring-brand-800 hover:bg-brand-50 transition-colors">
+                        <i class="bi bi-file-earmark-arrow-down mr-1.5"></i> Plantilla Vacia
+                    </a>
+                    <a href="{{ url_for('api.download_imposibilidades_example') }}" class="inline-flex items-center rounded-lg bg-white dark:bg-gray-700 px-3 py-1.5 text-xs font-medium text-blue-700 dark:text-blue-400 ring-1 ring-blue-200 dark:ring-blue-800 hover:bg-blue-50 transition-colors">
+                        <i class="bi bi-file-earmark-spreadsheet mr-1.5"></i> Ejemplo con Datos
+                    </a>
+                </div>
+            </div>
+
+            <div class="rounded-xl bg-blue-50 dark:bg-blue-900/20 p-4 mb-6 border border-blue-200 dark:border-blue-800">
+                <div class="flex">
+                    <i class="bi bi-info-circle-fill text-blue-400 mr-3 mt-0.5"></i>
+                    <div class="text-sm text-blue-700 dark:text-blue-400">
+                        <p>Columnas obligatorias: <strong>Orden, BP_Firma, Gestor, Ejecutivo, Tarea</strong>. Duplicados por Orden se omiten automaticamente.</p>
+                    </div>
+                </div>
+            </div>
+
+            <form method="POST" enctype="multipart/form-data" action="{{ url_for('admin.cargar_excel') }}" class="space-y-6">
+                <div>
+                    <label for="archivo" class="block text-sm font-medium leading-6 text-gray-900">Archivo Excel</label>
+                    <div class="mt-2">
+                        <input type="file" name="archivo" id="archivo" required accept=".xlsx, .xls"
+                            class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-brand-50 file:text-brand-700 hover:file:bg-brand-100 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 focus:outline-none">
+                    </div>
+                </div>
+
+                <div class="flex items-center justify-end gap-x-6 border-t border-gray-200 pt-6">
+                    <a href="{{ url_for('admin.dashboard') }}"
+                        class="text-sm font-semibold leading-6 text-gray-900 hover:text-brand-600">Cancelar</a>
+                    <button type="submit"
+                        class="rounded-md bg-brand-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-brand-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600">
+                        <i class="bi bi-upload mr-2"></i> Cargar Archivo
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

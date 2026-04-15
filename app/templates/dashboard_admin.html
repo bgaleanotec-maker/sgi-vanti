@@ -1,0 +1,140 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="space-y-6">
+
+    <!-- Hero Banner -->
+    <div class="relative overflow-hidden rounded-2xl bg-gradient-to-r from-brand-600 via-brand-700 to-blue-700 px-6 py-8 shadow-xl sm:px-10 sm:py-12">
+        <div class="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10"></div>
+        <div class="relative z-10 flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+            <div class="flex items-center gap-5">
+                <div class="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-white/20 backdrop-blur-sm border border-white/30 text-white text-2xl font-bold">
+                    {{ current_user.username[0]|upper }}
+                </div>
+                <div>
+                    <h1 class="text-2xl font-bold tracking-tight text-white sm:text-3xl">Hola, {{ current_user.username }}!</h1>
+                    <p class="mt-1 text-brand-100">Panel de Administrador - SGI Vanti v2.0</p>
+                </div>
+            </div>
+            <div class="flex gap-3">
+                <div class="flex flex-col items-center justify-center rounded-xl bg-white/10 backdrop-blur-md border border-white/20 px-5 py-3 text-white min-w-[90px]">
+                    <span class="text-2xl font-bold">{{ tareas|length }}</span>
+                    <span class="text-xs font-medium text-brand-200 uppercase tracking-wider">Total</span>
+                </div>
+                <div class="flex flex-col items-center justify-center rounded-xl bg-white/10 backdrop-blur-md border border-white/20 px-5 py-3 text-white min-w-[90px]">
+                    <span class="text-2xl font-bold">{{ tareas|selectattr('estado_tarea', 'equalto', 'pendiente')|list|length }}</span>
+                    <span class="text-xs font-medium text-brand-200 uppercase tracking-wider">Pendientes</span>
+                </div>
+                <div class="flex flex-col items-center justify-center rounded-xl bg-white/10 backdrop-blur-md border border-white/20 px-5 py-3 text-white min-w-[90px]">
+                    <span class="text-2xl font-bold">{{ tareas|selectattr('estado_tarea', 'equalto', 'cerrada')|list|length }}</span>
+                    <span class="text-xs font-medium text-brand-200 uppercase tracking-wider">Cerradas</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Actions Toolbar -->
+    <div class="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm ring-1 ring-gray-200 dark:ring-gray-700">
+        <div class="flex flex-wrap items-center gap-2">
+            <a href="{{ url_for('admin.cargar_excel') }}" class="inline-flex items-center rounded-lg bg-white dark:bg-gray-700 px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 shadow-sm ring-1 ring-gray-300 dark:ring-gray-600 hover:bg-gray-50 dark:hover:bg-gray-600 transition-all">
+                <i class="bi bi-upload mr-2 text-brand-600"></i> Cargar Excel
+            </a>
+            <a href="{{ url_for('admin.descargar_excel') }}" class="inline-flex items-center rounded-lg bg-white dark:bg-gray-700 px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 shadow-sm ring-1 ring-gray-300 dark:ring-gray-600 hover:bg-gray-50 dark:hover:bg-gray-600 transition-all">
+                <i class="bi bi-download mr-2 text-emerald-600"></i> Reporte
+            </a>
+            <a href="{{ url_for('admin.usuarios') }}" class="inline-flex items-center rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white shadow-md hover:bg-brand-700 transition-all">
+                <i class="bi bi-people-fill mr-2"></i> Usuarios
+            </a>
+            <a href="{{ url_for('admin.cargar_usuarios_masivo') }}" class="inline-flex items-center rounded-lg bg-white dark:bg-gray-700 px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 shadow-sm ring-1 ring-gray-300 dark:ring-gray-600 hover:bg-gray-50 dark:hover:bg-gray-600 transition-all">
+                <i class="bi bi-people-fill mr-2 text-blue-600"></i> Carga Masiva
+            </a>
+            <a href="{{ url_for('admin.mapa_geografico') }}" class="inline-flex items-center rounded-lg bg-white dark:bg-gray-700 px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 shadow-sm ring-1 ring-gray-300 dark:ring-gray-600 hover:bg-gray-50 dark:hover:bg-gray-600 transition-all">
+                <i class="bi bi-geo-alt mr-2 text-red-500"></i> Mapa
+            </a>
+            <a href="{{ url_for('admin.whatsapp_test') }}" class="inline-flex items-center rounded-lg bg-white dark:bg-gray-700 px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 shadow-sm ring-1 ring-gray-300 dark:ring-gray-600 hover:bg-gray-50 dark:hover:bg-gray-600 transition-all">
+                <i class="bi bi-whatsapp mr-2 text-green-600"></i> WhatsApp
+            </a>
+            <a href="{{ url_for('admin.reset_database') }}" class="inline-flex items-center rounded-lg bg-red-50 dark:bg-red-900/20 px-4 py-2 text-sm font-medium text-red-700 dark:text-red-400 shadow-sm ring-1 ring-red-200 dark:ring-red-800 hover:bg-red-100 transition-all ml-auto">
+                <i class="bi bi-trash-fill mr-2"></i> Reset DB
+            </a>
+        </div>
+    </div>
+
+    <!-- Filtros -->
+    {% include '_filtros.html' %}
+
+    <!-- Table -->
+    <div class="bg-white dark:bg-gray-800 shadow-sm ring-1 ring-gray-200 dark:ring-gray-700 rounded-xl overflow-hidden">
+        <div class="border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 px-4 py-4 sm:px-6 flex items-center justify-between">
+            <div>
+                <h3 class="text-base font-semibold text-gray-900 dark:text-white">Vista Maestra de Tareas</h3>
+                <p class="mt-0.5 text-sm text-gray-500 dark:text-gray-400">{{ tareas|length }} registros</p>
+            </div>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                <thead class="bg-gray-50 dark:bg-gray-800/50">
+                    <tr>
+                        <th class="py-3 pl-4 pr-3 text-left text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 sm:pl-6">Acciones</th>
+                        <th class="px-3 py-3 text-left text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Estado</th>
+                        <th class="px-3 py-3 text-left text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Tipo</th>
+                        <th class="px-3 py-3 text-left text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Orden</th>
+                        <th class="px-3 py-3 text-left text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Cuenta</th>
+                        <th class="px-3 py-3 text-left text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Contratista</th>
+                        <th class="px-3 py-3 text-left text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Gestor</th>
+                        <th class="px-3 py-3 text-left text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Fecha</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
+                    {% for tarea in tareas %}
+                    <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
+                        <td class="whitespace-nowrap py-3 pl-4 pr-3 sm:pl-6">
+                            <form action="{{ url_for('admin.eliminar_tarea', id=tarea.id) }}" method="POST" onsubmit="return confirm('Eliminar esta tarea?');" class="inline">
+                                <button type="submit" class="h-7 w-7 rounded-full bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 hover:bg-red-100 inline-flex items-center justify-center transition-colors" title="Eliminar">
+                                    <i class="bi bi-trash text-xs"></i>
+                                </button>
+                            </form>
+                        </td>
+                        <td class="whitespace-nowrap px-3 py-3">
+                            <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium
+                                {% if tarea.estado_tarea == 'pendiente' %}bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300
+                                {% elif tarea.estado_tarea == 'gestionado' %}bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400
+                                {% elif tarea.estado_tarea == 'cerrada' %}bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400
+                                {% elif tarea.estado_tarea == 'carta_enviada' %}bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400
+                                {% elif tarea.estado_tarea == 'carta_pendiente_revision' %}bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400
+                                {% else %}bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400{% endif %}">
+                                {{ tarea.estado_tarea.replace('_', ' ')|capitalize }}
+                            </span>
+                        </td>
+                        <td class="whitespace-nowrap px-3 py-3 text-sm text-gray-700 dark:text-gray-300 font-medium">{{ tarea.tipo_tarea|capitalize if tarea.tipo_tarea else 'Estandar' }}</td>
+                        <td class="whitespace-nowrap px-3 py-3 text-sm text-gray-600 dark:text-gray-400 font-mono">{{ tarea.orden }}</td>
+                        <td class="whitespace-nowrap px-3 py-3 text-sm text-gray-600 dark:text-gray-400 font-mono">{{ tarea.cuenta_contrato }}</td>
+                        <td class="whitespace-nowrap px-3 py-3 text-sm text-gray-600 dark:text-gray-400">
+                            {% if tarea.bp_firma %}
+                            <div class="flex items-center gap-2">
+                                <div class="h-6 w-6 rounded-full bg-brand-100 dark:bg-brand-900/30 flex items-center justify-center text-xs text-brand-600 dark:text-brand-400 font-bold">{{ tarea.bp_firma[0] }}</div>
+                                {{ tarea.bp_firma }}
+                            </div>
+                            {% else %}<span class="text-gray-400">--</span>{% endif %}
+                        </td>
+                        <td class="whitespace-nowrap px-3 py-3 text-sm text-gray-600 dark:text-gray-400">{{ tarea.gestor_asignado or '--' }}</td>
+                        <td class="whitespace-nowrap px-3 py-3 text-sm text-gray-500 dark:text-gray-500">{{ tarea.fecha_cargue.strftime('%Y-%m-%d') if tarea.fecha_cargue else '--' }}</td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="8" class="px-3 py-12 text-center text-sm text-gray-500 dark:text-gray-400">
+                            <div class="flex flex-col items-center">
+                                <i class="bi bi-inbox text-4xl text-gray-300 dark:text-gray-600 mb-3"></i>
+                                <p>No se encontraron tareas.</p>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+{% include '_asistente.html' %}
+{% endblock %}

@@ -1,0 +1,64 @@
+<div class="mt-2">
+    <input type="text" name="username" id="username" required
+        class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-brand-600 sm:text-sm sm:leading-6"
+        placeholder="Ej: JhonDoe">
+</div>
+</div>
+
+<div>
+    <label for="email" class="block text-sm font-medium leading-6 text-gray-900">Correo
+        Electrónico</label>
+    <div class="mt-2">
+        <input type="email" name="email" id="email" required
+            class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-brand-600 sm:text-sm sm:leading-6">
+    </div>
+</div>
+
+<div>
+    <label for="bp_firma" class="block text-sm font-medium leading-6 text-gray-900">BP Firma (ID
+        Contratista)</label>
+    <div class="mt-2">
+        <input type="text" name="bp_firma" id="bp_firma"
+            class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-brand-600 sm:text-sm sm:leading-6"
+            placeholder="Ej: 1000008472">
+    </div>
+    <p class="mt-2 text-sm text-gray-500">Obligatorio para usuarios con rol 'Contratista'. Este ID
+        asociará las tareas.</p>
+</div>
+
+<div>
+    <label for="celular" class="block text-sm font-medium leading-6 text-gray-900">Celular
+        (WhatsApp)</label>
+    <div class="mt-2">
+        <input type="tel" name="celular" id="celular"
+            class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-brand-600 sm:text-sm sm:leading-6"
+            placeholder="+573001234567">
+    </div>
+    <p class="mt-2 text-sm text-gray-500">Para notificaciones automáticas por WhatsApp.</p>
+</div>
+
+<div>
+    <label for="rol" class="block text-sm font-medium leading-6 text-gray-900">Rol</label>
+    <div class="mt-2">
+        <select id="rol" name="rol" required
+            class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-brand-600 sm:text-sm sm:leading-6">
+            <option value="contratista">Contratista (Firma)</option>
+            <option value="gestor">Gestor</option>
+            <option value="ejecutivo">Ejecutivo</option>
+            <option value="admin">Administrador</option>
+        </select>
+    </div>
+</div>
+
+<div class="flex items-center justify-end gap-x-6 border-t border-gray-200 pt-6">
+    <a href="{{ url_for('admin.dashboard') }}"
+        class="text-sm font-semibold leading-6 text-gray-900 hover:text-brand-600">Cancelar</a>
+    <button type="submit"
+        class="rounded-md bg-brand-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-brand-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600">Crear
+        Usuario</button>
+</div>
+</form>
+</div>
+</div>
+</div>
+{% endblock %}

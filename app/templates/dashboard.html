@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Dashboard</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+</head>
+<body class="bg-light">
+<div class="container mt-4">
+  <h2>Bienvenido {{ user.username }} <small class="text-muted">(rol: {{ user.rol }})</small></h2>
+
+  <div class="mt-4">
+
+    {% if user.rol == 'admin' %}
+      <a href="{{ url_for('resumen_admin') }}" class="btn btn-outline-primary me-2 mb-2">📊 Ver Resumen</a>
+      <a href="{{ url_for('admin.cargar_excel') }}" class="btn btn-outline-success mb-2">⬆️ Cargar Excel</a>
+    {% elif user.rol == 'contratista' %}
+      <a href="{{ url_for('contratista_dashboard') }}" class="btn btn-outline-info mb-2">📋 Ver mis tareas</a>
+    {% elif user.rol == 'gestor' %}
+      <a href="{{ url_for('gestor_dashboard') }}" class="btn btn-outline-warning mb-2">📂 Ver tareas asignadas</a>
+    {% endif %}
+
+  </div>
+
+  <a href="{{ url_for('auth.logout') }}" class="btn btn-secondary mt-4">Cerrar sesión</a>
+</div>
+</body>
+</html>

@@ -1,0 +1,77 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container-fluid mt-4">
+    <h3>Panel de Gestión (Gestor: {{ user.username }})</h3>
+
+    <!-- Incluir el formulario de filtros -->
+    {% include '_filtros.html' %}
+
+    <div class="table-responsive">
+        <table class="table table-bordered table-striped table-hover">
+            <thead class="table-dark">
+                <tr>
+                    <th>Cuenta Contrato</th>
+                    <!-- COLUMNA AÑADIDA -->
+                    <th>Orden</th>
+                    <th>Tipo Imposibilidad</th>
+                    <th>Contratista</th>
+                    <th>Estado Tarea</th>
+                    <th>Comentario Contratista</th>
+                    <th>Adjunto</th>
+                    <th style="width: 25%;">Acción y Comentarios del Gestor</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for tarea in tareas %}
+                <tr>
+                    <td>{{ tarea.cuenta_contrato }}</td>
+                    <!-- DATO DE LA NUEVA COLUMNA -->
+                    <td>{{ tarea.orden }}</td>
+                    <td>{{ tarea.tipo_imposibilidad or 'N/A' }}</td>
+                    <td>{{ tarea.bp_firma }}</td>
+                    <td>
+                        <span class="badge rounded-pill 
+                            {% if tarea.estado_tarea == 'pendiente' %} bg-secondary
+                            {% elif tarea.estado_tarea == 'devuelta' %} bg-warning text-dark
+                            {% elif tarea.estado_tarea == 'gestionado' %} bg-primary
+                            {% else %} bg-success {% endif %}">
+                            {{ tarea.estado_tarea.replace('_', ' ')|capitalize }}
+                        </span>
+                    </td>
+                    <td>{{ tarea.comentarios or 'Sin comentario' }}</td>
+                    <td>
+                        {% if tarea.archivo_nombre %}
+                            <a href="{{ url_for('admin.descargar_adjuntos', filename=tarea.archivo_nombre) }}" target="_blank" class="btn btn-outline-secondary btn-sm">
+                                <i class="bi bi-paperclip"></i> Ver
+                            </a>
+                        {% else %}
+                            <em>Sin adjunto</em>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <form action="{{ url_for('gestor.gestionar_tarea', id=tarea.id) }}" method="POST">
+                            <div class="mb-2">
+                                <textarea name="comentario" class="form-control" rows="2" placeholder="Añadir comentario de gestión...">{{ tarea.comentarios_gestor or '' }}</textarea>
+                            </div>
+                            <div class="btn-group w-100">
+                                <button type="submit" name="accion" value="cerrada" class="btn btn-success btn-sm">Cerrar Caso</button>
+                                <button type="submit" name="accion" value="devuelta" class="btn btn-warning btn-sm">Devolver a Contratista</button>
+                            </div>
+                        </form>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="7" class="text-center">No se encontraron tareas con los filtros aplicados.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- INTEGRACIÓN DEL ASISTENTE VIRTUAL -->
+{% include '_asistente.html' %}
+
+
+{% endblock %}

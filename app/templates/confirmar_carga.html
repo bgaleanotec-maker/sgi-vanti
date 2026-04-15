@@ -1,0 +1,24 @@
+<!-- templates/confirmar_carga.html -->
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-4">
+    <h3>Órdenes Duplicadas Detectadas</h3>
+    <p>Se encontraron <strong>{{ duplicados|length }}</strong> órdenes que ya existen en la base de datos.</p>
+    <ul>
+        {% for orden in duplicados %}
+            <li>{{ orden }}</li>
+        {% endfor %}
+    </ul>
+    <p>¿Desea incluir estas órdenes duplicadas en la carga?</p>
+
+    <form method="POST" action="{{ url_for('confirmar_carga_excel') }}">
+        <input type="hidden" name="incluir_duplicados" value="true">
+        <button class="btn btn-success" type="submit">Sí, cargar todo</button>
+    </form>
+
+    <form method="POST" action="{{ url_for('confirmar_carga_excel') }}" class="mt-2">
+        <input type="hidden" name="incluir_duplicados" value="false">
+        <button class="btn btn-danger" type="submit">No, omitir duplicados</button>
+    </form>
+</div>
+{% endblock %}

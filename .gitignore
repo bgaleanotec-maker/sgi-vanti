@@ -1,0 +1,10 @@
+__pycache__/
+*.py[cod]
+*.db
+.env
+uploads_soporte/
+knowledge_base/
+*.pyc
+.venv/
+venv/
+instance/

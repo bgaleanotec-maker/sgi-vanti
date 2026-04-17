@@ -103,3 +103,11 @@ def documentacion():
     from app.models.catalog import EstadoTareaConfig
     estados = EstadoTareaConfig.query.order_by(EstadoTareaConfig.order_index).all()
     return render_template('documentacion.html', estados=estados)
+
+
+@auth_bp.route('/bpmn')
+@auth_bp.route('/proceso')
+def bpmn_proceso():
+    """Public BPMN process diagram accessible without login.
+    Visual documentation of the full SGI Vanti workflow."""
+    return render_template('bpmn_proceso.html')

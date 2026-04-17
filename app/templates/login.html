@@ -53,12 +53,17 @@
             </form>
         </div>
 
-        <!-- Documentation Link -->
-        <div class="mt-8 text-center">
-            <a href="{{ url_for('auth.documentacion') }}" class="inline-flex items-center gap-2 rounded-xl bg-white dark:bg-gray-800 px-6 py-3 text-sm font-medium text-brand-600 dark:text-brand-400 shadow-sm ring-1 ring-gray-200 dark:ring-gray-700 hover:bg-brand-50 dark:hover:bg-gray-700 transition-all">
+        <!-- Documentation Links -->
+        <div class="mt-8 grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <a href="{{ url_for('auth.documentacion') }}"
+                class="inline-flex items-center justify-center gap-2 rounded-xl bg-white dark:bg-gray-800 px-4 py-3 text-sm font-medium text-brand-600 dark:text-brand-400 shadow-sm ring-1 ring-gray-200 dark:ring-gray-700 hover:bg-brand-50 dark:hover:bg-gray-700 transition-all">
                 <i class="bi bi-book text-lg"></i>
-                <span>Guia de Usuario y Documentacion</span>
-                <i class="bi bi-arrow-right text-xs"></i>
+                <span>Guia de Usuario</span>
+            </a>
+            <a href="{{ url_for('auth.bpmn_proceso') }}"
+                class="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-br from-indigo-600 to-purple-600 px-4 py-3 text-sm font-semibold text-white shadow-lg hover:from-indigo-500 hover:to-purple-500 transition-all">
+                <i class="bi bi-diagram-3-fill text-lg"></i>
+                <span>Flujo BPMN del Proceso</span>
             </a>
         </div>
 

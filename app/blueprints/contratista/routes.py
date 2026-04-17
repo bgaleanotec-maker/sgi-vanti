@@ -1,6 +1,7 @@
 import os
+import io
 from datetime import datetime
-from flask import render_template, request, redirect, url_for, flash
+from flask import render_template, request, redirect, url_for, flash, send_file
 from flask_login import login_required, current_user
 
 from app.extensions import db
@@ -16,11 +17,29 @@ from app.blueprints.contratista import contratista_bp
 @login_required
 @role_required('contratista')
 def dashboard():
+    from app.models.catalog import EstadoTareaConfig
     filter_value = current_user.bp_firma if current_user.bp_firma else current_user.username
     query = Imposibilidad.query.filter_by(bp_firma=filter_value)
     query, filtros = aplicar_filtros_comunes(query)
     tareas = query.all()
-    return render_template('dashboard_contratista.html', tareas=tareas, user=current_user, filtros=filtros)
+
+    # Stats by state + filiales summary
+    estados = EstadoTareaConfig.query.filter_by(is_active=True).order_by(EstadoTareaConfig.order_index).all()
+    estado_map = {e.name: e for e in estados}
+    stats = {e.name: 0 for e in estados}
+    filiales = set()
+    for t in tareas:
+        if t.estado_tarea in stats:
+            stats[t.estado_tarea] += 1
+        if t.filial:
+            filiales.add(t.filial)
+
+    return render_template(
+        'dashboard_contratista.html',
+        tareas=tareas, user=current_user, filtros=filtros,
+        estados=estados, estado_map=estado_map, stats=stats,
+        filiales=sorted(filiales),
+    )
 
 
 @contratista_bp.route('/gestionar/<int:id>', methods=['POST'])
@@ -97,6 +116,60 @@ def gestionar_carta(id):
         flash("Carta guardada.", "success")
         return redirect(url_for('contratista.dashboard'))
     return render_template('gestionar_carta.html', tarea=tarea)
+
+
+@contratista_bp.route('/descargar_cartera')
+@login_required
+@role_required('contratista')
+def descargar_cartera():
+    """Download full portfolio for this contratista/firma as XLSX."""
+    import pandas as pd
+    filter_value = current_user.bp_firma if current_user.bp_firma else current_user.username
+    tareas = Imposibilidad.query.filter_by(bp_firma=filter_value).all()
+
+    rows = []
+    for t in tareas:
+        rows.append({
+            'Orden': t.orden,
+            'Cuenta_Contrato': t.cuenta_contrato,
+            'Sociedad': t.sociedad,
+            'Filial': t.filial or '',
+            'BP_Firma': t.bp_firma,
+            'Tipo_Asignacion': t.tipo_asignacion or '',
+            'Solicitante': t.solicitante,
+            'Direccion': t.direccion,
+            'Municipio': t.municipio,
+            'Codigo_Imposibilidad': t.codigo_imposibilidad or '',
+            'Tipo_Imposibilidad': t.tipo_imposibilidad,
+            'Estado_Tarea': t.estado_tarea,
+            'Tipo_Tarea': t.tipo_tarea,
+            'Gestor': t.gestor_asignado,
+            'Ejecutivo': t.ejecutivo_asignado,
+            'Fecha_Cargue': t.fecha_cargue.strftime('%Y-%m-%d %H:%M') if t.fecha_cargue else '',
+            'Fecha_Gestion': t.fecha_gestion_firma.strftime('%Y-%m-%d %H:%M') if t.fecha_gestion_firma else '',
+            'Comentarios_Firma': t.comentarios or '',
+            'Comentarios_Gestor': t.comentarios_gestor or '',
+        })
+    df = pd.DataFrame(rows)
+
+    output = io.BytesIO()
+    with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
+        df.to_excel(writer, index=False, sheet_name='Mi Cartera')
+        wb = writer.book
+        ws = writer.sheets['Mi Cartera']
+        header_fmt = wb.add_format({'bold': True, 'bg_color': '#6c5ce7', 'font_color': 'white', 'border': 1})
+        for col_num, col_name in enumerate(df.columns):
+            ws.write(0, col_num, col_name, header_fmt)
+            ws.set_column(col_num, col_num, 18)
+    output.seek(0)
+
+    filename = f"cartera_{filter_value}_{datetime.now().strftime('%Y%m%d_%H%M')}.xlsx"
+    return send_file(
+        output,
+        as_attachment=True,
+        download_name=filename,
+        mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    )
 
 
 @contratista_bp.route('/perfil', methods=['GET', 'POST'])

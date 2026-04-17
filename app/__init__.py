@@ -48,6 +48,9 @@ def create_app(config_class=None):
         from app.models import (Usuario, Imposibilidad, Carta, ServiceConfig,
                                 EstadoTareaConfig, TipoImposibilidadConfig, NotificationLog)
         db.create_all()
+        # Safe additive migrations BEFORE seeding (never drops anything)
+        from app.safe_migrate import run_safe_migrations
+        run_safe_migrations()
         from app.seed import seed_defaults
         seed_defaults()
 

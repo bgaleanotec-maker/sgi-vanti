@@ -12,6 +12,8 @@ class Usuario(UserMixin, db.Model):
     rol = db.Column(db.String(20), nullable=False)
     must_change_password = db.Column(db.Boolean, default=False)
     bp_firma = db.Column(db.String(50), nullable=True)
+    # tipo_firma distinguishes 'firma' (owns the business, registered with BP) from 'contratista' (subcontractor working on it)
+    tipo_firma = db.Column(db.String(20), nullable=True, default='contratista')
     celular = db.Column(db.String(20), nullable=True)
     is_active = db.Column(db.Boolean, default=True)
     notify_email = db.Column(db.Boolean, default=True)

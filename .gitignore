@@ -8,3 +8,15 @@ knowledge_base/
 .venv/
 venv/
 instance/
+
+# Legacy monolithic files (v1) - superseded by app/ blueprint structure
+/app.py
+/config.py
+/init_db.py
+/migrate_db.py
+/migrate_db_v2.py
+/models.py
+/setup.py
+/static/
+/templates/
+/test_whatsapp_direct.py

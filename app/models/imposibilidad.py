@@ -29,6 +29,12 @@ class Imposibilidad(db.Model):
     archivo_nombre = db.Column(db.String(255))
     ejecutivo_asignado = db.Column(db.String(100), nullable=True)
     tipo_tarea = db.Column(db.String(50), nullable=True)
+    # filial: subsidiary / branch that owns the business (visible to firma/contratista)
+    filial = db.Column(db.String(100), nullable=True)
+    # tipo_asignacion: whether the BP_Firma on this row refers to a 'firma' or a 'contratista'
+    tipo_asignacion = db.Column(db.String(20), nullable=True, default='contratista')
+    # numeric anomaly code from PowerBI (172 types)
+    codigo_imposibilidad = db.Column(db.Integer, nullable=True)
 
     carta = db.relationship('Carta', backref='imposibilidad', uselist=False, cascade='all, delete-orphan')
 

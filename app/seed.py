@@ -23,22 +23,27 @@ def seed_defaults():
         db.session.add(admin)
         print("Seeded: admin user created")
 
-    # --- Default task statuses ---
-    if not EstadoTareaConfig.query.first():
-        statuses = [
-            ('pendiente', 'Pendiente', '#94a3b8', 0, False),
-            ('gestionado', 'Gestionado', '#3b82f6', 1, False),
-            ('devuelta', 'Devuelta', '#f59e0b', 2, False),
-            ('cerrada', 'Cerrada', '#22c55e', 3, True),
-            ('carta_pendiente_revision', 'Carta Pendiente Revisión', '#8b5cf6', 4, False),
-            ('carta_enviada', 'Carta Enviada', '#10b981', 5, True),
-        ]
-        for name, display, color, order, is_done in statuses:
+    # --- Default task statuses (detailed workflow) ---
+    # Additive: only insert the ones that do not yet exist. Never delete existing statuses.
+    default_statuses = [
+        ('pendiente', 'Pendiente', '#94a3b8', 0, False),
+        ('recibida', 'Recibida', '#60a5fa', 1, False),
+        ('validada', 'Validada', '#3b82f6', 2, False),
+        ('rechazada', 'Rechazada', '#ef4444', 3, False),
+        ('devuelta', 'Devuelta para ajustes', '#f59e0b', 4, False),
+        ('gestionado', 'Gestionado', '#10b981', 5, False),
+        ('cerrada', 'Cerrada', '#22c55e', 6, True),
+        ('carta_pendiente_revision', 'Carta Pendiente Revisión', '#8b5cf6', 7, False),
+        ('carta_enviada', 'Carta Enviada', '#059669', 8, True),
+    ]
+    for name, display, color, order, is_done in default_statuses:
+        existing = EstadoTareaConfig.query.filter_by(name=name).first()
+        if existing is None:
             db.session.add(EstadoTareaConfig(
                 name=name, display_name=display, color=color,
                 order_index=order, is_done_state=is_done
             ))
-        print("Seeded: default task statuses")
+            print(f"Seeded status: {name}")
 
     # --- Default impossibility types ---
     if not TipoImposibilidadConfig.query.first():

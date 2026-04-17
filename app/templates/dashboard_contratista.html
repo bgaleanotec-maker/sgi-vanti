@@ -4,14 +4,59 @@
 <div class="space-y-8">
 
     <!-- Header Section -->
-    <div class="md:flex md:items-center md:justify-between">
+    <div class="md:flex md:items-center md:justify-between gap-4">
         <div class="min-w-0 flex-1">
-            <h2 class="text-2xl font-bold leading-7 text-gray-900 sm:truncate sm:text-3xl sm:tracking-tight">Mis Tareas
-                Asignadas</h2>
-            <p class="mt-1 text-sm text-gray-500">Gestión de imposibilidades para el contratista <span
-                    class="font-semibold text-gray-900">{{ current_user.username }}</span></p>
+            <h2 class="text-2xl font-bold leading-7 text-gray-900 dark:text-white sm:truncate sm:text-3xl sm:tracking-tight">
+                Mi Cartera
+            </h2>
+            <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                {% if current_user.tipo_firma == 'firma' %}
+                    <span class="inline-flex items-center rounded-md bg-amber-50 px-2 py-1 text-xs font-medium text-amber-800 ring-1 ring-inset ring-amber-600/20 mr-2">
+                        <i class="bi bi-building mr-1"></i> Firma
+                    </span>
+                {% elif current_user.tipo_firma == 'contratista' %}
+                    <span class="inline-flex items-center rounded-md bg-indigo-50 px-2 py-1 text-xs font-medium text-indigo-800 ring-1 ring-inset ring-indigo-600/20 mr-2">
+                        <i class="bi bi-tools mr-1"></i> Contratista
+                    </span>
+                {% endif %}
+                Gestión de imposibilidades para
+                <span class="font-semibold text-gray-900 dark:text-white">{{ current_user.full_name or current_user.username }}</span>
+                {% if current_user.bp_firma %}
+                    <span class="text-xs text-gray-400">(BP: {{ current_user.bp_firma }})</span>
+                {% endif %}
+            </p>
+            {% if filiales %}
+            <p class="mt-2 text-xs text-gray-600 dark:text-gray-300">
+                <strong>Filiales en tu cartera:</strong>
+                {% for f in filiales %}
+                    <span class="inline-block bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 px-2 py-0.5 rounded mr-1">{{ f }}</span>
+                {% endfor %}
+            </p>
+            {% endif %}
+        </div>
+        <div class="flex gap-2">
+            <a href="{{ url_for('contratista.descargar_cartera') }}"
+                class="inline-flex items-center rounded-md bg-green-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-green-500">
+                <i class="bi bi-file-earmark-excel mr-2"></i> Descargar Cartera
+            </a>
+            <a href="{{ url_for('contratista.perfil') }}"
+                class="inline-flex items-center rounded-md bg-white dark:bg-gray-700 px-3 py-2 text-sm font-semibold text-gray-900 dark:text-white ring-1 ring-inset ring-gray-300 hover:bg-gray-50">
+                <i class="bi bi-person-gear mr-2"></i> Mi Perfil
+            </a>
         </div>
     </div>
+
+    <!-- Stats by state -->
+    {% if stats %}
+    <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3">
+        {% for estado in estados %}
+        <div class="rounded-lg shadow-sm bg-white dark:bg-gray-800 p-3 border-l-4" style="border-left-color: {{ estado.color }};">
+            <p class="text-xs text-gray-500 dark:text-gray-400 truncate">{{ estado.display_name }}</p>
+            <p class="text-xl font-bold text-gray-900 dark:text-white">{{ stats.get(estado.name, 0) }}</p>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
 
     <!-- Filtros -->
     {% include '_filtros.html' %}
@@ -38,6 +83,9 @@
                             class="px-3 py-3.5 text-left text-xs font-bold uppercase tracking-wider text-gray-500">
                             Dirección</th>
                         <th scope="col"
+                            class="px-3 py-3.5 text-left text-xs font-bold uppercase tracking-wider text-gray-500">
+                            Filial</th>
+                        <th scope="col"
                             class="px-3 py-3.5 text-left text-xs font-bold uppercase tracking-wider text-gray-500">Tipo
                         </th>
                         <th scope="col"
@@ -60,23 +108,38 @@
                         </td>
                         <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-600 max-w-xs truncate"
                             title="{{ tarea.direccion }}">{{ tarea.direccion }}</td>
+                        <td class="whitespace-nowrap px-3 py-4 text-sm">
+                            {% if tarea.filial %}
+                                <span class="inline-flex items-center rounded-md bg-slate-50 px-2 py-1 text-xs font-medium text-slate-700 ring-1 ring-inset ring-slate-600/20">
+                                    <i class="bi bi-diagram-3 mr-1"></i> {{ tarea.filial }}
+                                </span>
+                            {% else %}
+                                <span class="text-gray-400 text-xs">—</span>
+                            {% endif %}
+                        </td>
                         <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-600">
                             <div class="flex flex-col">
-                                <span class="font-medium">{{ tarea.tipo_imposibilidad or 'N/A' }}</span>
-                                <span class="text-xs text-gray-400">{{ tarea.tipo_tarea|capitalize or 'Estándar'
-                                    }}</span>
+                                <span class="font-medium">
+                                    {% if tarea.codigo_imposibilidad %}
+                                        <span class="inline-block bg-purple-100 text-purple-800 text-xs font-mono px-1.5 py-0.5 rounded mr-1">#{{ tarea.codigo_imposibilidad }}</span>
+                                    {% endif %}
+                                    {{ tarea.tipo_imposibilidad or 'N/A' }}
+                                </span>
+                                <span class="text-xs text-gray-400">{{ tarea.tipo_tarea|capitalize or 'Estándar' }}</span>
                             </div>
                         </td>
                         <td class="whitespace-nowrap px-3 py-4 text-sm">
-                            <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium 
-                                {% if tarea.estado_tarea == 'pendiente' %} bg-yellow-100 text-yellow-800 ring-1 ring-inset ring-yellow-600/20
-                                {% elif tarea.estado_tarea == 'devuelta' %} bg-orange-100 text-orange-800 ring-1 ring-inset ring-orange-600/20
-                                {% elif tarea.estado_tarea == 'carta_pendiente_revision' %} bg-blue-100 text-blue-800 ring-1 ring-inset ring-blue-600/20
-                                {% elif tarea.estado_tarea == 'carta_enviada' %} bg-green-100 text-green-800 ring-1 ring-inset ring-green-600/20
-                                {% elif tarea.estado_tarea == 'gestionado' %} bg-brand-100 text-brand-800 ring-1 ring-inset ring-brand-600/20
-                                {% else %} bg-gray-100 text-gray-800 ring-1 ring-inset ring-gray-500/10 {% endif %}">
-                                {{ tarea.estado_tarea.replace('_', ' ')|capitalize }}
-                            </span>
+                            {% set estado_cfg = estado_map.get(tarea.estado_tarea) %}
+                            {% if estado_cfg %}
+                                <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ring-1 ring-inset"
+                                      style="background-color: {{ estado_cfg.color }}20; color: {{ estado_cfg.color }}; border: 1px solid {{ estado_cfg.color }}40;">
+                                    {{ estado_cfg.display_name }}
+                                </span>
+                            {% else %}
+                                <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-gray-100 text-gray-800">
+                                    {{ (tarea.estado_tarea or 'pendiente').replace('_', ' ')|capitalize }}
+                                </span>
+                            {% endif %}
                         </td>
                         <td class="px-3 py-4 text-sm text-gray-500">
                             {% if tarea.tipo_tarea == 'carta' %}
@@ -113,7 +176,7 @@
                     </tr>
                     {% else %}
                     <tr>
-                        <td colspan="7" class="px-3 py-12 text-center text-sm text-gray-500">
+                        <td colspan="8" class="px-3 py-12 text-center text-sm text-gray-500">
                             <div class="flex flex-col items-center justify-center">
                                 <i class="bi bi-inbox text-4xl text-gray-300 mb-3"></i>
                                 <p>No tienes tareas asignadas.</p>

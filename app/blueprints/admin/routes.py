@@ -103,10 +103,29 @@ def cargar_excel():
 
             tasks_by_firm = {}
 
+            def _safe(val):
+                """Return stripped string or None for NaN/empty."""
+                if val is None:
+                    return None
+                try:
+                    if pd.isna(val):
+                        return None
+                except Exception:
+                    pass
+                s = str(val).strip()
+                return s if s and s.lower() != 'nan' else None
+
             for _, row in df_nuevos.iterrows():
-                ejecutivo = str(row.get('Ejecutivo', '')).strip()
-                tipo_tarea = str(row.get('Tarea', '')).strip().lower()
-                firma = str(row.get('BP_Firma', '')).strip()
+                ejecutivo = _safe(row.get('Ejecutivo'))
+                tipo_tarea = (_safe(row.get('Tarea')) or 'estandar').lower()
+                firma = _safe(row.get('BP_Firma'))
+                tipo_asignacion = (_safe(row.get('Tipo_Asignacion')) or 'contratista').lower()
+                filial = _safe(row.get('Filial'))
+                codigo_raw = row.get('Codigo_Imposibilidad')
+                try:
+                    codigo_imp = int(codigo_raw) if codigo_raw is not None and not pd.isna(codigo_raw) else None
+                except (ValueError, TypeError):
+                    codigo_imp = None
 
                 if ejecutivo and not Usuario.query.filter_by(username=ejecutivo).first():
                     db.session.add(Usuario(
@@ -118,25 +137,32 @@ def cargar_excel():
                     db.session.add(Usuario(
                         username=firma,
                         password=generate_password_hash(firma, method='pbkdf2:sha256'),
-                        rol='contratista', must_change_password=True
+                        rol='contratista',
+                        tipo_firma=tipo_asignacion if tipo_asignacion in ('firma', 'contratista') else 'contratista',
+                        bp_firma=firma,
+                        must_change_password=True
                     ))
 
                 tarea = Imposibilidad(
-                    sociedad=row.get('Sociedad'),
-                    cuenta_contrato=str(row.get('Cuenta_Contrato')),
+                    sociedad=_safe(row.get('Sociedad')),
+                    cuenta_contrato=_safe(row.get('Cuenta_Contrato')),
                     orden=str(row.get('Orden')),
-                    estatus_usuario=row.get('Estatus_de_ Usuario'),
-                    bp_firma=firma, malla=row.get('Malla'),
-                    direccion=row.get('Direccion_Punto_Suministro'),
-                    solicitante=row.get('Nombre_del_solicitante'),
-                    descripcion_mercado=row.get('Descripcion_Mercado'),
-                    municipio=row.get('N_Municipio'),
-                    n_bp_firma=str(row.get('N_BP_Firma')),
-                    estado_cliente=row.get('Estado'),
-                    tipo_imposibilidad=row.get('Imposibilidad_1'),
-                    latitud=str(row.get('latitud')),
-                    longitud=str(row.get('longitud')),
-                    gestor_asignado=str(row.get('Gestor', '')).strip(),
+                    estatus_usuario=_safe(row.get('Estatus_de_ Usuario')),
+                    bp_firma=firma,
+                    tipo_asignacion=tipo_asignacion,
+                    filial=filial,
+                    codigo_imposibilidad=codigo_imp,
+                    malla=_safe(row.get('Malla')),
+                    direccion=_safe(row.get('Direccion_Punto_Suministro')),
+                    solicitante=_safe(row.get('Nombre_del_solicitante')),
+                    descripcion_mercado=_safe(row.get('Descripcion_Mercado')),
+                    municipio=_safe(row.get('N_Municipio')),
+                    n_bp_firma=_safe(row.get('N_BP_Firma')),
+                    estado_cliente=_safe(row.get('Estado')),
+                    tipo_imposibilidad=_safe(row.get('Imposibilidad_1')),
+                    latitud=_safe(row.get('latitud')),
+                    longitud=_safe(row.get('longitud')),
+                    gestor_asignado=_safe(row.get('Gestor')),
                     ejecutivo_asignado=ejecutivo,
                     tipo_tarea=tipo_tarea,
                     estado_tarea='pendiente',
@@ -240,24 +266,41 @@ def descargar_excel():
 @login_required
 @role_required('admin')
 def reset_database():
-    if request.method == 'POST':
-        codigo = request.form.get('codigo')
-        if codigo == '7894':
-            try:
-                db.drop_all()
-                db.create_all()
-                from app.seed import seed_defaults
-                seed_defaults()
-                flash('Base de datos reiniciada exitosamente.', 'success')
-                logout_user()
-                return redirect(url_for('auth.login'))
-            except Exception as e:
-                db.session.rollback()
-                flash(f'Error al reiniciar: {e}', 'danger')
-        else:
-            flash('Código de seguridad incorrecto.', 'danger')
-        return redirect(url_for('admin.reset_database'))
-    return render_template('reset_database.html')
+    """DISABLED for production safety. Use admin/purge_imposibilidades instead if you
+    truly need to clear task data. Never drop schema on a live database."""
+    flash(
+        'El reset destructivo fue DESHABILITADO para proteger la base de datos en produccion. '
+        'Contacta al administrador del sistema si realmente necesitas este procedimiento.',
+        'warning'
+    )
+    return redirect(url_for('admin.dashboard'))
+
+
+@admin_bp.route('/purge_imposibilidades', methods=['POST'])
+@login_required
+@role_required('admin')
+def purge_imposibilidades():
+    """Safe alternative: delete only Imposibilidad rows (preserves users, catalogs, service config).
+    Requires typing the total count to confirm."""
+    total = Imposibilidad.query.count()
+    confirm_count = request.form.get('confirm_count', '').strip()
+    if confirm_count != str(total):
+        flash(
+            f'Para confirmar debes escribir exactamente el numero actual de tareas ({total}). '
+            f'Esta accion NO toca usuarios, catalogos ni configuracion.',
+            'warning'
+        )
+        return redirect(url_for('admin.dashboard'))
+    try:
+        # Delete carta first (FK), then imposibilidad
+        Carta.query.delete()
+        Imposibilidad.query.delete()
+        db.session.commit()
+        flash(f'{total} tareas eliminadas. Usuarios y catalogos intactos.', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error al purgar tareas: {e}', 'danger')
+    return redirect(url_for('admin.dashboard'))
 
 
 @admin_bp.route('/adjuntos/<path:filename>')

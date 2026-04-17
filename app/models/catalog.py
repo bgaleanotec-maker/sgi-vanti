@@ -21,7 +21,10 @@ class TipoImposibilidadConfig(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), unique=True, nullable=False)
+    # Numeric code from Power BI (172 anomaly types)
+    codigo_numerico = db.Column(db.Integer, nullable=True, index=True)
+    descripcion = db.Column(db.String(255), nullable=True)
     is_active = db.Column(db.Boolean, default=True)
 
     def __repr__(self):
-        return f'<TipoImposibilidad {self.name}>'
+        return f'<TipoImposibilidad {self.codigo_numerico}-{self.name}>'

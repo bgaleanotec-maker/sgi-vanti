@@ -1,0 +1,97 @@
+{% extends 'base.html' %}
+{% block title %}Ticket #{{ ticket.id }} - SGI Vanti{% endblock %}
+
+{% block content %}
+<div class="mx-auto max-w-3xl py-8 space-y-6">
+
+    <a href="{{ url_for('soporte.mis_tickets') }}" class="text-sm text-indigo-600 hover:underline">
+        <i class="bi bi-arrow-left"></i> Volver a mis tickets
+    </a>
+
+    <div class="bg-white dark:bg-gray-800 shadow rounded-xl p-6 space-y-4">
+        <div class="flex items-start justify-between">
+            <div>
+                <h1 class="text-xl font-bold text-gray-900 dark:text-white">Ticket #{{ ticket.id }}</h1>
+                <p class="text-sm text-gray-500">{{ ticket.created_at.strftime('%Y-%m-%d %H:%M') }}</p>
+            </div>
+            <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold
+                {% if ticket.estado == 'abierto' %}bg-amber-100 text-amber-800
+                {% elif ticket.estado == 'en_proceso' %}bg-blue-100 text-blue-800
+                {% elif ticket.estado == 'resuelto' %}bg-green-100 text-green-800
+                {% else %}bg-gray-100 text-gray-800{% endif %}">
+                {{ ticket.estado|replace('_', ' ')|capitalize }}
+            </span>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4 text-sm pt-4 border-t border-gray-200 dark:border-gray-700">
+            <div>
+                <p class="text-gray-500">Reportado por</p>
+                <p class="font-semibold">{{ ticket.reporter_username }} ({{ ticket.reporter_rol }})</p>
+            </div>
+            <div>
+                <p class="text-gray-500">BP Firma</p>
+                <p class="font-mono">{{ ticket.reporter_bp_firma or '-' }}</p>
+            </div>
+            <div>
+                <p class="text-gray-500">Categoria</p>
+                <p>{{ ticket.categoria }}</p>
+            </div>
+            <div>
+                <p class="text-gray-500">Orden</p>
+                <p class="font-mono">{{ ticket.orden or '-' }}</p>
+            </div>
+        </div>
+
+        <div class="pt-4 border-t border-gray-200 dark:border-gray-700">
+            <h2 class="font-semibold text-gray-900 dark:text-white">{{ ticket.asunto }}</h2>
+            <p class="mt-2 text-sm text-gray-700 dark:text-gray-300 whitespace-pre-line">{{ ticket.descripcion }}</p>
+        </div>
+
+        {% if ticket.archivo_evidencia %}
+        <div class="pt-4 border-t border-gray-200 dark:border-gray-700">
+            <p class="text-sm text-gray-500">Evidencia adjunta:</p>
+            <a href="{{ url_for('admin.descargar_adjuntos', filename=ticket.archivo_evidencia) }}"
+               class="inline-flex items-center gap-2 text-indigo-600 hover:underline">
+                <i class="bi bi-paperclip"></i> {{ ticket.archivo_evidencia }}
+            </a>
+        </div>
+        {% endif %}
+
+        {% if ticket.respuesta_admin %}
+        <div class="bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-800 rounded-lg p-4">
+            <p class="text-xs font-semibold text-indigo-700 dark:text-indigo-300 mb-1">
+                <i class="bi bi-headset"></i> Respuesta de Mesa de Ayuda
+                {% if ticket.fecha_resolucion %}<span class="text-gray-500 font-normal">- {{ ticket.fecha_resolucion.strftime('%Y-%m-%d %H:%M') }}</span>{% endif %}
+            </p>
+            <p class="text-sm text-gray-800 dark:text-gray-200 whitespace-pre-line">{{ ticket.respuesta_admin }}</p>
+        </div>
+        {% endif %}
+    </div>
+
+    {% if current_user.rol == 'admin' %}
+    <div class="bg-white dark:bg-gray-800 shadow rounded-xl p-6">
+        <h2 class="font-semibold text-gray-900 dark:text-white mb-4">Responder / Actualizar (Admin)</h2>
+        <form method="POST" action="{{ url_for('soporte.responder_ticket', id=ticket.id) }}" class="space-y-3">
+            <div>
+                <label class="block text-sm font-medium">Estado</label>
+                <select name="estado" class="mt-1 block w-full rounded-md border-gray-300 dark:bg-gray-700 dark:border-gray-600 py-2 px-3 text-sm">
+                    <option value="en_proceso" {% if ticket.estado == 'en_proceso' %}selected{% endif %}>En proceso</option>
+                    <option value="resuelto" {% if ticket.estado == 'resuelto' %}selected{% endif %}>Resuelto</option>
+                    <option value="cerrado" {% if ticket.estado == 'cerrado' %}selected{% endif %}>Cerrado</option>
+                    <option value="abierto" {% if ticket.estado == 'abierto' %}selected{% endif %}>Reabierto</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-sm font-medium">Respuesta</label>
+                <textarea name="respuesta" rows="4"
+                    class="mt-1 block w-full rounded-md border-gray-300 dark:bg-gray-700 dark:border-gray-600 py-2 px-3 text-sm"
+                    placeholder="Escribe la respuesta al usuario. Recibira notificacion por WhatsApp+Email.">{{ ticket.respuesta_admin or '' }}</textarea>
+            </div>
+            <button type="submit" class="rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow hover:bg-indigo-500">
+                Guardar y notificar al usuario
+            </button>
+        </form>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

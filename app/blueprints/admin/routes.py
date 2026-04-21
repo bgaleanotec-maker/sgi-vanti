@@ -199,26 +199,87 @@ def cargar_excel():
 
             db.session.commit()
 
-            # WhatsApp summaries per firm
+            # WhatsApp + Email summaries per firm - busca TODOS los usuarios con ese BP_Firma
             from app.services.whatsapp_service import send_whatsapp
+            from app.services.email_service import send_email
             ws_sent = ws_failed = 0
+            em_sent = em_failed = 0
+            sin_destinatario = []
             for firma, tasks in tasks_by_firm.items():
-                firma_user = Usuario.query.filter(
-                    (Usuario.username == firma) | (Usuario.bp_firma == firma)
-                ).first()
-                if firma_user and firma_user.celular and firma_user.notify_whatsapp:
-                    count = len(tasks)
-                    preview = "\n".join([f"- {t['orden']} ({t['direccion']})" for t in tasks[:3]])
-                    if count > 3:
-                        preview += f"\n... y {count - 3} más."
-                    msg = f"Hola {firma}, se han cargado {count} nuevas tareas.\n\n{preview}\n\nIngresa al sistema para gestionarlas."
-                    if send_whatsapp(firma_user.celular, msg):
-                        ws_sent += 1
-                    else:
-                        ws_failed += 1
+                # Buscar TODOS los usuarios relacionados con este BP (firma o contratista)
+                # Pueden existir multiples (una firma + varios contratistas bajo el mismo BP)
+                firma_users = Usuario.query.filter(
+                    or_(
+                        Usuario.username == firma,
+                        Usuario.bp_firma == firma
+                    ),
+                    Usuario.is_active == True
+                ).all()
 
-            flash(f"Carga completada: {len(df_nuevos)} tareas nuevas. WhatsApps: {ws_sent} enviados, {ws_failed} fallidos.",
-                  "success" if ws_failed == 0 else "warning")
+                if not firma_users:
+                    sin_destinatario.append(f"{firma} ({len(tasks)} tareas)")
+                    continue
+
+                count = len(tasks)
+                # Summary compact (nunca lista todas las tareas para no saturar WhatsApp)
+                preview = "\n".join([f"- {t['orden']}" for t in tasks[:3]])
+                if count > 3:
+                    preview += f"\n... y {count - 3} mas."
+
+                msg = (
+                    f"Hola, se acaban de cargar *{count} nuevos negocios* para el BP {firma} en SGI Vanti.\n\n"
+                    f"Primeras ordenes:\n{preview}\n\n"
+                    f"Ingresa a la plataforma para gestionarlos."
+                )
+
+                destinatarios_wa = 0
+                destinatarios_email = 0
+                for fu in firma_users:
+                    # WhatsApp
+                    if fu.celular and fu.notify_whatsapp:
+                        try:
+                            ok = send_whatsapp(fu.celular, msg)
+                            if ok:
+                                ws_sent += 1
+                                destinatarios_wa += 1
+                            else:
+                                ws_failed += 1
+                                print(f"[cargar_excel][WA-fail] BP={firma} user={fu.username} celular={fu.celular}")
+                        except Exception as e:
+                            ws_failed += 1
+                            print(f"[cargar_excel][WA-error] BP={firma} user={fu.username}: {e}")
+                    # Email resumen (adicional al por-tarea)
+                    if fu.email and fu.notify_email:
+                        try:
+                            subject = f"SGI Vanti - {count} nuevas tareas cargadas para BP {firma}"
+                            html = f"""
+                                <p>Hola {fu.full_name or fu.username},</p>
+                                <p>Se han cargado <strong>{count} nuevas tareas</strong> vinculadas al BP <strong>{firma}</strong>.</p>
+                                <p>Primeras ordenes:</p>
+                                <ul>{''.join(f'<li>{t["orden"]} - {t["direccion"]}</li>' for t in tasks[:5])}</ul>
+                                <p>Ingresa a la plataforma SGI Vanti para gestionarlas.</p>
+                            """
+                            send_email(fu.email, subject, html)
+                            em_sent += 1
+                            destinatarios_email += 1
+                        except Exception as e:
+                            em_failed += 1
+                            print(f"[cargar_excel][email-error] BP={firma} user={fu.username}: {e}")
+
+                if destinatarios_wa == 0 and destinatarios_email == 0:
+                    sin_destinatario.append(f"{firma} ({count} tareas, sin celular/email)")
+                print(f"[cargar_excel] BP={firma}: {count} tareas, {destinatarios_wa} WA + {destinatarios_email} emails enviados")
+
+            msg_resumen = (
+                f"Carga completada: {len(df_nuevos)} tareas nuevas. "
+                f"WhatsApp: {ws_sent} enviados ({ws_failed} fallidos). "
+                f"Emails: {em_sent} enviados ({em_failed} fallidos)."
+            )
+            if sin_destinatario:
+                msg_resumen += f" BPs sin destinatario configurado: {', '.join(sin_destinatario[:5])}"
+                if len(sin_destinatario) > 5:
+                    msg_resumen += f" (+{len(sin_destinatario)-5} mas)"
+            flash(msg_resumen, "success" if (ws_failed + em_failed) == 0 else "warning")
             return redirect(url_for('admin.dashboard'))
         except Exception as e:
             db.session.rollback()

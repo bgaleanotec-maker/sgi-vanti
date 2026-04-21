@@ -34,10 +34,15 @@
             </p>
             {% endif %}
         </div>
-        <div class="flex gap-2">
+        <div class="flex flex-wrap gap-2">
             <a href="{{ url_for('contratista.descargar_cartera') }}"
                 class="inline-flex items-center rounded-md bg-green-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-green-500">
                 <i class="bi bi-file-earmark-excel mr-2"></i> Descargar Cartera
+            </a>
+            <a href="{{ url_for('soporte.nuevo_ticket') }}"
+                class="inline-flex items-center rounded-md bg-red-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-red-500"
+                title="Reportar error o escalar a Mesa de Ayuda">
+                <i class="bi bi-exclamation-triangle mr-2"></i> Reportar Error
             </a>
             <a href="{{ url_for('contratista.perfil') }}"
                 class="inline-flex items-center rounded-md bg-white dark:bg-gray-700 px-3 py-2 text-sm font-semibold text-gray-900 dark:text-white ring-1 ring-inset ring-gray-300 hover:bg-gray-50">
@@ -172,6 +177,10 @@
                                 </button>
                             </form>
                             {% endif %}
+                            <a href="{{ url_for('soporte.nuevo_ticket', imposibilidad_id=tarea.id) }}"
+                               class="mt-2 block text-center text-xs text-red-600 hover:text-red-800 hover:underline">
+                                <i class="bi bi-exclamation-triangle"></i> Reportar error en esta tarea
+                            </a>
                         </td>
                     </tr>
                     {% else %}

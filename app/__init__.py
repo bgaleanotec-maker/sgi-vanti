@@ -29,6 +29,7 @@ def create_app(config_class=None):
     from app.blueprints.ejecutivo import ejecutivo_bp
     from app.blueprints.assistant import assistant_bp
     from app.blueprints.api import api_bp
+    from app.blueprints.soporte import soporte_bp
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(admin_bp)
@@ -37,6 +38,7 @@ def create_app(config_class=None):
     app.register_blueprint(ejecutivo_bp)
     app.register_blueprint(assistant_bp)
     app.register_blueprint(api_bp)
+    app.register_blueprint(soporte_bp)
 
     # Health check
     @app.route('/health')
@@ -46,7 +48,8 @@ def create_app(config_class=None):
     # Create tables and seed on first run
     with app.app_context():
         from app.models import (Usuario, Imposibilidad, Carta, ServiceConfig,
-                                EstadoTareaConfig, TipoImposibilidadConfig, NotificationLog)
+                                EstadoTareaConfig, TipoImposibilidadConfig, NotificationLog,
+                                SoporteTicket)
         db.create_all()
         # Safe additive migrations BEFORE seeding (never drops anything)
         from app.safe_migrate import run_safe_migrations

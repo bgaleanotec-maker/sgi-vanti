@@ -17,12 +17,84 @@ from app.blueprints.ejecutivo import ejecutivo_bp
 @login_required
 @role_required('ejecutivo')
 def dashboard():
-    query = Imposibilidad.query.filter_by(
-        ejecutivo_asignado=current_user.username, tipo_tarea='carta'
+    """Ejecutivo ve TODAS las tareas donde es responsable:
+    - tareas tipo 'carta' (para gestionar la carta final)
+    - Y tambien tiene visibilidad de OTRAS tareas del mismo BP_Firma para ver el estado
+      de los negocios de sus contratistas/firmas (pendiente, devuelto, gestionado, etc.)
+    """
+    from app.models.catalog import EstadoTareaConfig
+    from sqlalchemy import or_
+
+    # Tareas donde este ejecutivo es el asignado
+    tareas_propias = Imposibilidad.query.filter_by(
+        ejecutivo_asignado=current_user.username
     )
-    query, filtros = aplicar_filtros_comunes(query)
-    tareas = query.all()
-    return render_template('dashboard_ejecutivo.html', tareas=tareas, user=current_user, filtros=filtros)
+
+    # BPs_Firma vinculados a este ejecutivo (para ver TODAS las tareas de esas firmas)
+    bps_del_ejecutivo = db.session.query(Imposibilidad.bp_firma).filter_by(
+        ejecutivo_asignado=current_user.username
+    ).distinct().all()
+    bps = [b[0] for b in bps_del_ejecutivo if b[0]]
+
+    # Tareas asociadas (mismas firmas del ejecutivo, para visibilidad de estado)
+    if bps:
+        tareas_asociadas_q = Imposibilidad.query.filter(Imposibilidad.bp_firma.in_(bps))
+    else:
+        tareas_asociadas_q = tareas_propias
+
+    tareas_asociadas_q, filtros = aplicar_filtros_comunes(tareas_asociadas_q)
+
+    # Filtros especificos del ejecutivo
+    estado_filter = request.args.get('estado')
+    bp_filter = request.args.get('bp_firma')
+    vista = request.args.get('vista', 'todas')  # 'todas', 'cartas', 'propias'
+
+    if vista == 'cartas':
+        tareas_asociadas_q = tareas_asociadas_q.filter_by(tipo_tarea='carta')
+    elif vista == 'propias':
+        tareas_asociadas_q = tareas_asociadas_q.filter_by(ejecutivo_asignado=current_user.username)
+
+    if estado_filter:
+        tareas_asociadas_q = tareas_asociadas_q.filter_by(estado_tarea=estado_filter)
+        filtros['estado'] = estado_filter
+    if bp_filter:
+        tareas_asociadas_q = tareas_asociadas_q.filter(
+            Imposibilidad.bp_firma.ilike(f'%{bp_filter}%')
+        )
+        filtros['bp_firma'] = bp_filter
+
+    tareas = tareas_asociadas_q.order_by(Imposibilidad.fecha_cargue.desc()).all()
+
+    # Stats: conteo por estado para todas las tareas de los BPs vinculados
+    estados = EstadoTareaConfig.query.filter_by(is_active=True).order_by(EstadoTareaConfig.order_index).all()
+    estado_map = {e.name: e for e in estados}
+    stats = {e.name: 0 for e in estados}
+    total_cartas_pendientes = 0
+    bps_summary = {}
+    for t in tareas:
+        if t.estado_tarea in stats:
+            stats[t.estado_tarea] += 1
+        if t.tipo_tarea == 'carta' and t.estado_tarea != 'carta_enviada':
+            total_cartas_pendientes += 1
+        bp = t.bp_firma or 'Sin BP'
+        if bp not in bps_summary:
+            bps_summary[bp] = {'total': 0, 'pendientes': 0, 'gestionados': 0, 'devueltas': 0}
+        bps_summary[bp]['total'] += 1
+        if t.estado_tarea in ('pendiente', 'recibida'):
+            bps_summary[bp]['pendientes'] += 1
+        elif t.estado_tarea == 'gestionado':
+            bps_summary[bp]['gestionados'] += 1
+        elif t.estado_tarea in ('devuelta', 'rechazada'):
+            bps_summary[bp]['devueltas'] += 1
+
+    return render_template(
+        'dashboard_ejecutivo.html',
+        tareas=tareas, user=current_user, filtros=filtros,
+        estados=estados, estado_map=estado_map, stats=stats,
+        total_cartas_pendientes=total_cartas_pendientes,
+        bps_summary=bps_summary,
+        vista=vista, estado_filter=estado_filter, bp_filter=bp_filter,
+    )
 
 
 @ejecutivo_bp.route('/carta/<int:id>', methods=['GET', 'POST'])

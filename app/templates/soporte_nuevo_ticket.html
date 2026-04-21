@@ -1,0 +1,82 @@
+{% extends 'base.html' %}
+{% block title %}Nuevo Ticket - Soporte SGI Vanti{% endblock %}
+
+{% block content %}
+<div class="mx-auto max-w-3xl py-8 space-y-6">
+
+    <div class="bg-gradient-to-r from-red-600 to-orange-600 rounded-2xl shadow-xl p-6 text-white">
+        <div class="flex items-center gap-4">
+            <div class="bg-white/20 rounded-xl p-3">
+                <i class="bi bi-headset text-3xl"></i>
+            </div>
+            <div>
+                <h1 class="text-2xl font-bold">Reportar Incidente a Mesa de Ayuda</h1>
+                <p class="text-orange-100 text-sm">
+                    Cuando no puedas cambiar un estado, cargar un soporte o tengas un error de visualizacion,
+                    escala aqui con evidencia. El equipo de soporte sera notificado inmediatamente.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <form method="POST" enctype="multipart/form-data" class="bg-white dark:bg-gray-800 rounded-xl shadow p-6 space-y-5">
+
+        {% if tarea_ref %}
+        <div class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
+            <p class="text-sm text-blue-800 dark:text-blue-200">
+                Reportando sobre la orden <strong>{{ tarea_ref.orden }}</strong> - {{ tarea_ref.direccion }}
+            </p>
+            <input type="hidden" name="imposibilidad_id" value="{{ tarea_ref.id }}">
+            <input type="hidden" name="orden" value="{{ tarea_ref.orden }}">
+        </div>
+        {% else %}
+        <div>
+            <label for="orden" class="block text-sm font-medium text-gray-900 dark:text-gray-200">Orden relacionada (opcional)</label>
+            <input type="text" name="orden" id="orden" placeholder="Ej: ORD-12345"
+                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white py-2 px-3">
+        </div>
+        {% endif %}
+
+        <div>
+            <label for="categoria" class="block text-sm font-medium text-gray-900 dark:text-gray-200">Categoria *</label>
+            <select name="categoria" id="categoria" required
+                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white py-2 px-3">
+                {% for value, label in categorias %}
+                <option value="{{ value }}">{{ label }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div>
+            <label for="asunto" class="block text-sm font-medium text-gray-900 dark:text-gray-200">Asunto *</label>
+            <input type="text" name="asunto" id="asunto" required maxlength="200"
+                placeholder="Breve titulo del problema"
+                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white py-2 px-3">
+        </div>
+
+        <div>
+            <label for="descripcion" class="block text-sm font-medium text-gray-900 dark:text-gray-200">Descripcion detallada *</label>
+            <textarea name="descripcion" id="descripcion" required rows="6"
+                placeholder="Explica que intentaste hacer, que paso exactamente, el mensaje de error (si aplica), y cualquier informacion util para el equipo de soporte."
+                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white py-2 px-3"></textarea>
+        </div>
+
+        <div>
+            <label for="archivo" class="block text-sm font-medium text-gray-900 dark:text-gray-200">Evidencia adjunta (captura de pantalla o PDF)</label>
+            <input type="file" name="archivo" id="archivo"
+                accept="image/*,.pdf,.doc,.docx,.xls,.xlsx"
+                class="mt-1 block w-full text-sm text-gray-500 file:mr-2 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100">
+            <p class="mt-1 text-xs text-gray-500">Imagen, PDF o Word/Excel. Ayuda mucho adjuntar una captura del error.</p>
+        </div>
+
+        <div class="flex items-center justify-end gap-3 border-t border-gray-200 dark:border-gray-700 pt-4">
+            <a href="{{ url_for('soporte.mis_tickets') }}" class="text-sm font-semibold text-gray-700 dark:text-gray-300">Cancelar</a>
+            <button type="submit"
+                class="rounded-md bg-red-600 px-4 py-2 text-sm font-semibold text-white shadow hover:bg-red-500">
+                <i class="bi bi-send mr-1"></i> Enviar Ticket a Mesa de Ayuda
+            </button>
+        </div>
+    </form>
+
+</div>
+{% endblock %}

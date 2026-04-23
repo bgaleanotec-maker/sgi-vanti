@@ -43,6 +43,7 @@ def redirect_by_role(user):
         'admin': 'admin.dashboard',
         'gestor': 'gestor.dashboard',
         'contratista': 'contratista.dashboard',
+        'firma': 'contratista.dashboard',  # firma usa el mismo dashboard que contratista pero filtrado por rol
         'ejecutivo': 'ejecutivo.dashboard',
     }
     return url_for(role_map.get(user.rol, 'auth.login'))

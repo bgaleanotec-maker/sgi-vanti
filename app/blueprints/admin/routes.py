@@ -121,6 +121,10 @@ def cargar_excel():
                 firma = _safe(row.get('BP_Firma'))
                 tipo_asignacion = (_safe(row.get('Tipo_Asignacion')) or 'contratista').lower()
                 filial = _safe(row.get('Filial'))
+                tipo_negacion = (_safe(row.get('Tipo_Negacion')) or 'imposibilidad').lower()
+                if tipo_negacion not in ('imposibilidad', 'rechazo'):
+                    tipo_negacion = 'imposibilidad'
+                motivo_rechazo = _safe(row.get('Motivo_Rechazo'))
                 codigo_raw = row.get('Codigo_Imposibilidad')
                 try:
                     codigo_imp = int(codigo_raw) if codigo_raw is not None and not pd.isna(codigo_raw) else None
@@ -151,6 +155,8 @@ def cargar_excel():
                     bp_firma=firma,
                     tipo_asignacion=tipo_asignacion,
                     filial=filial,
+                    tipo_negacion=tipo_negacion,
+                    motivo_rechazo=motivo_rechazo,
                     codigo_imposibilidad=codigo_imp,
                     malla=_safe(row.get('Malla')),
                     direccion=_safe(row.get('Direccion_Punto_Suministro')),
@@ -286,6 +292,120 @@ def cargar_excel():
             flash(f"Error al procesar: {e}", "danger")
         return redirect(url_for('admin.dashboard'))
     return render_template('cargar_excel.html')
+
+
+@admin_bp.route('/tarea/<int:id>', methods=['GET'])
+@login_required
+@role_required('admin')
+def gestionar_tarea(id):
+    """Admin: ver detalle de tarea con acciones de subsanacion (modificar, reactivar, devolver, marcar no valida)."""
+    from app.models.catalog import EstadoTareaConfig
+    tarea = Imposibilidad.query.get_or_404(id)
+    estados = EstadoTareaConfig.query.filter_by(is_active=True).order_by(EstadoTareaConfig.order_index).all()
+    return render_template('admin_gestionar_tarea.html', tarea=tarea, estados=estados)
+
+
+@admin_bp.route('/tarea/<int:id>/accion', methods=['POST'])
+@login_required
+@role_required('admin')
+def tarea_accion(id):
+    """Admin actions over a task: modify comments, reactivate, return for adjustments, mark invalid."""
+    tarea = Imposibilidad.query.get_or_404(id)
+    accion = request.form.get('accion', '').strip()
+    comentario_admin = (request.form.get('comentario_admin') or '').strip()
+    nuevo_estado = request.form.get('nuevo_estado', '').strip()
+
+    # Actualizar comentarios si viene editado (subsanacion)
+    nuevos_comentarios_firma = request.form.get('comentarios_firma')
+    if nuevos_comentarios_firma is not None:
+        tarea.comentarios = nuevos_comentarios_firma.strip() or None
+    nuevos_comentarios_gestor = request.form.get('comentarios_gestor')
+    if nuevos_comentarios_gestor is not None:
+        tarea.comentarios_gestor = nuevos_comentarios_gestor.strip() or None
+
+    mensaje_usuario = None
+
+    if accion == 'reactivar':
+        # Volver a etapa de gestion: permite a la firma subir nuevos soportes
+        tarea.estado_tarea = 'pendiente'
+        tarea.motivo_rechazo = None
+        mensaje_usuario = (
+            f"Admin reactivo la orden {tarea.orden}. "
+            f"Ingresa al sistema y sube la informacion corregida."
+        )
+        if comentario_admin:
+            tarea.comentarios_gestor = (tarea.comentarios_gestor or '') + f"\n[ADMIN reactivo {datetime.now():%Y-%m-%d %H:%M}]: {comentario_admin}"
+    elif accion == 'devolver':
+        tarea.estado_tarea = 'devuelta'
+        mensaje_usuario = (
+            f"Admin devolvio la orden {tarea.orden} para ajustes. "
+            f"Motivo: {comentario_admin or 'ver plataforma'}."
+        )
+        if comentario_admin:
+            tarea.comentarios_gestor = (tarea.comentarios_gestor or '') + f"\n[ADMIN devolvio {datetime.now():%Y-%m-%d %H:%M}]: {comentario_admin}"
+    elif accion == 'marcar_no_valida':
+        tarea.estado_tarea = 'rechazada'
+        tarea.tipo_negacion = 'rechazo'
+        tarea.motivo_rechazo = comentario_admin or 'Informacion no valida segun admin'
+        mensaje_usuario = (
+            f"Admin marco la orden {tarea.orden} como NO VALIDA. "
+            f"Motivo: {tarea.motivo_rechazo}"
+        )
+    elif accion == 'cerrar':
+        tarea.estado_tarea = 'cerrada'
+        mensaje_usuario = f"Admin cerro la orden {tarea.orden}."
+        if comentario_admin:
+            tarea.comentarios_gestor = (tarea.comentarios_gestor or '') + f"\n[ADMIN cerro {datetime.now():%Y-%m-%d %H:%M}]: {comentario_admin}"
+    elif accion == 'cambiar_estado' and nuevo_estado:
+        tarea.estado_tarea = nuevo_estado
+        if comentario_admin:
+            tarea.comentarios_gestor = (tarea.comentarios_gestor or '') + f"\n[ADMIN estado->{nuevo_estado} {datetime.now():%Y-%m-%d %H:%M}]: {comentario_admin}"
+    elif accion == 'guardar':
+        # solo guarda edits de comentarios sin cambiar estado
+        pass
+    elif accion == 'cambiar_tipo_negacion':
+        nuevo_tipo_neg = request.form.get('tipo_negacion', 'imposibilidad').strip().lower()
+        if nuevo_tipo_neg in ('imposibilidad', 'rechazo'):
+            tarea.tipo_negacion = nuevo_tipo_neg
+            if nuevo_tipo_neg == 'rechazo':
+                tarea.motivo_rechazo = comentario_admin or tarea.motivo_rechazo
+    else:
+        flash('Accion no reconocida.', 'warning')
+        return redirect(url_for('admin.gestionar_tarea', id=id))
+
+    try:
+        db.session.commit()
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error guardando cambios: {e}', 'danger')
+        return redirect(url_for('admin.gestionar_tarea', id=id))
+
+    # Notificar a la firma si hubo accion con mensaje
+    if mensaje_usuario and tarea.bp_firma:
+        from sqlalchemy import or_ as _or
+        recipientes = Usuario.query.filter(
+            _or(Usuario.username == tarea.bp_firma, Usuario.bp_firma == tarea.bp_firma),
+            Usuario.is_active == True
+        ).all()
+        subject = f"SGI Vanti - Actualizacion admin en orden {tarea.orden}"
+        html = f"""
+            <p>Hola,</p>
+            <p>{mensaje_usuario}</p>
+            <p>Ingresa a la plataforma para revisar el detalle y actuar.</p>
+        """
+        for u in recipientes:
+            try:
+                if u.email and u.notify_email:
+                    from app.services.email_service import send_email
+                    send_email(u.email, subject, html)
+                if u.celular and u.notify_whatsapp:
+                    from app.services.whatsapp_service import send_whatsapp
+                    send_whatsapp(u.celular, mensaje_usuario)
+            except Exception as e:
+                print(f"[admin.tarea_accion] error notificando {u.username}: {e}")
+
+    flash(f'Accion "{accion}" aplicada correctamente. Notificacion enviada.', 'success')
+    return redirect(url_for('admin.gestionar_tarea', id=id))
 
 
 @admin_bp.route('/eliminar_tarea/<int:id>', methods=['POST'])

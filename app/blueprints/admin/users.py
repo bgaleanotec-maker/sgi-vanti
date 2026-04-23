@@ -81,11 +81,18 @@ def crear_usuario():
         elif email and Usuario.query.filter_by(email=email).first():
             flash("El correo ya está registrado.", "danger")
         else:
+            # tipo_firma se ajusta automaticamente: rol 'firma' implica tipo_firma='firma',
+            # rol 'contratista' puede ser firma o contratista (subcontratado)
+            if rol == 'firma':
+                tipo_firma = 'firma'
+            elif rol != 'contratista':
+                tipo_firma = None
+
             new_user = Usuario(
                 username=username, email=email, rol=rol, full_name=full_name,
                 password=generate_password_hash(DEFAULT_PASSWORD, method='pbkdf2:sha256'),
                 must_change_password=True, bp_firma=bp_firma, celular=celular,
-                tipo_firma=tipo_firma if rol == 'contratista' else None,
+                tipo_firma=tipo_firma,
                 created_by_id=current_user.id,
             )
             db.session.add(new_user)
@@ -107,7 +114,13 @@ def editar_usuario(id):
         user.email = request.form.get('email', '').strip() or None
         user.rol = request.form.get('rol')
         user.bp_firma = request.form.get('bp_firma', '').strip() or None
-        user.tipo_firma = (request.form.get('tipo_firma', '').strip() or None) if user.rol == 'contratista' else None
+        # tipo_firma: auto para rol firma, manual para contratista, None para resto
+        if user.rol == 'firma':
+            user.tipo_firma = 'firma'
+        elif user.rol == 'contratista':
+            user.tipo_firma = request.form.get('tipo_firma', '').strip() or None
+        else:
+            user.tipo_firma = None
         user.celular = request.form.get('celular', '').strip() or None
         user.full_name = request.form.get('full_name', '').strip() or None
         user.is_active = request.form.get('is_active') == 'on'

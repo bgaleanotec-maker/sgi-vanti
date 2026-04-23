@@ -1,0 +1,167 @@
+{% extends 'base.html' %}
+{% block title %}Gestionar Tarea {{ tarea.orden }} - Admin{% endblock %}
+
+{% block content %}
+<div class="mx-auto max-w-5xl py-8 space-y-6">
+
+    <a href="{{ url_for('admin.dashboard') }}" class="text-sm text-indigo-600 hover:underline">
+        <i class="bi bi-arrow-left"></i> Volver al dashboard
+    </a>
+
+    <!-- Header -->
+    <div class="bg-gradient-to-r from-indigo-600 to-purple-600 rounded-2xl p-6 text-white shadow-xl">
+        <div class="flex items-start justify-between gap-4">
+            <div>
+                <p class="text-indigo-200 text-xs uppercase tracking-wider">Orden</p>
+                <h1 class="text-2xl font-bold font-mono">{{ tarea.orden }}</h1>
+                <p class="mt-1 text-indigo-100 text-sm">{{ tarea.direccion or '-' }}</p>
+            </div>
+            <div class="text-right">
+                <p class="text-xs text-indigo-200 uppercase tracking-wider">Estado actual</p>
+                <p class="text-lg font-bold">{{ (tarea.estado_tarea or 'pendiente')|replace('_', ' ')|capitalize }}</p>
+                <p class="text-xs mt-1">
+                    {% if tarea.tipo_negacion == 'rechazo' %}
+                        <span class="bg-red-500/30 px-2 py-0.5 rounded">RECHAZO</span>
+                    {% else %}
+                        <span class="bg-blue-500/30 px-2 py-0.5 rounded">IMPOSIBILIDAD</span>
+                    {% endif %}
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Datos -->
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow p-6">
+        <h2 class="font-semibold text-gray-900 dark:text-white mb-4"><i class="bi bi-info-circle mr-1"></i> Datos del negocio</h2>
+        <div class="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
+            <div><p class="text-gray-500 text-xs">BP Firma</p><p class="font-mono font-semibold">{{ tarea.bp_firma or '-' }}</p></div>
+            <div><p class="text-gray-500 text-xs">Tipo asignacion</p><p>{{ tarea.tipo_asignacion or '-' }}</p></div>
+            <div><p class="text-gray-500 text-xs">Filial</p><p>{{ tarea.filial or '-' }}</p></div>
+            <div><p class="text-gray-500 text-xs">Cuenta contrato</p><p class="font-mono">{{ tarea.cuenta_contrato or '-' }}</p></div>
+            <div><p class="text-gray-500 text-xs">Solicitante</p><p>{{ tarea.solicitante or '-' }}</p></div>
+            <div><p class="text-gray-500 text-xs">Municipio</p><p>{{ tarea.municipio or '-' }}</p></div>
+            <div><p class="text-gray-500 text-xs">Codigo imposibilidad</p><p class="font-mono">#{{ tarea.codigo_imposibilidad or '-' }}</p></div>
+            <div><p class="text-gray-500 text-xs">Tipo imposibilidad</p><p>{{ tarea.tipo_imposibilidad or '-' }}</p></div>
+            <div><p class="text-gray-500 text-xs">Tipo tarea</p><p>{{ (tarea.tipo_tarea or 'estandar')|capitalize }}</p></div>
+            <div><p class="text-gray-500 text-xs">Gestor</p><p>{{ tarea.gestor_asignado or '-' }}</p></div>
+            <div><p class="text-gray-500 text-xs">Ejecutivo</p><p>{{ tarea.ejecutivo_asignado or '-' }}</p></div>
+            <div>
+                <p class="text-gray-500 text-xs">Fecha cargue</p>
+                <p>{{ tarea.fecha_cargue.strftime('%Y-%m-%d %H:%M') if tarea.fecha_cargue else '-' }}</p>
+            </div>
+            {% if tarea.fecha_gestion_firma %}
+            <div>
+                <p class="text-gray-500 text-xs">Fecha gestion firma</p>
+                <p>{{ tarea.fecha_gestion_firma.strftime('%Y-%m-%d %H:%M') }}</p>
+            </div>
+            {% endif %}
+            {% if tarea.archivo_nombre %}
+            <div>
+                <p class="text-gray-500 text-xs">Soporte adjunto</p>
+                <a href="{{ url_for('admin.descargar_adjuntos', filename=tarea.archivo_nombre) }}" class="text-indigo-600 hover:underline">
+                    <i class="bi bi-paperclip"></i> {{ tarea.archivo_nombre }}
+                </a>
+            </div>
+            {% endif %}
+        </div>
+        {% if tarea.tipo_negacion == 'rechazo' and tarea.motivo_rechazo %}
+        <div class="mt-4 bg-red-50 border border-red-200 rounded p-3">
+            <p class="text-xs font-semibold text-red-700">Motivo de rechazo</p>
+            <p class="text-sm text-red-900">{{ tarea.motivo_rechazo }}</p>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Formulario unico de gestion -->
+    <form method="POST" action="{{ url_for('admin.tarea_accion', id=tarea.id) }}" class="bg-white dark:bg-gray-800 rounded-xl shadow p-6 space-y-5">
+        <h2 class="font-semibold text-gray-900 dark:text-white"><i class="bi bi-tools mr-1"></i> Panel de gestion y subsanacion (Admin)</h2>
+        <p class="text-sm text-gray-600 dark:text-gray-400">
+            Desde aqui el admin puede modificar comentarios, reactivar la orden, devolverla para ajustes,
+            marcarla como no valida, cerrarla, o cambiar manualmente el estado.
+            Todas las acciones notifican por WhatsApp + Email a la firma.
+        </p>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+                <label class="block text-sm font-medium">Comentarios firma / contratista</label>
+                <textarea name="comentarios_firma" rows="3"
+                    class="mt-1 block w-full rounded-md border-gray-300 dark:bg-gray-700 dark:border-gray-600 py-2 px-3 text-sm">{{ tarea.comentarios or '' }}</textarea>
+                <p class="text-xs text-gray-500 mt-1">Editable por admin en subsanacion.</p>
+            </div>
+            <div>
+                <label class="block text-sm font-medium">Comentarios gestor / historial admin</label>
+                <textarea name="comentarios_gestor" rows="3"
+                    class="mt-1 block w-full rounded-md border-gray-300 dark:bg-gray-700 dark:border-gray-600 py-2 px-3 text-sm">{{ tarea.comentarios_gestor or '' }}</textarea>
+                <p class="text-xs text-gray-500 mt-1">Las acciones admin se agregan aqui con timestamp automatico.</p>
+            </div>
+        </div>
+
+        <div>
+            <label class="block text-sm font-medium">Nota para esta accion (se incluye en la notificacion al usuario)</label>
+            <textarea name="comentario_admin" rows="2" placeholder="Explica el motivo de la accion (ej: 'los soportes aprobados permiten reactivar')"
+                class="mt-1 block w-full rounded-md border-gray-300 dark:bg-gray-700 dark:border-gray-600 py-2 px-3 text-sm"></textarea>
+        </div>
+
+        <div class="border-t border-gray-200 dark:border-gray-700 pt-4">
+            <p class="text-sm font-semibold text-gray-900 dark:text-white mb-3">Seleccionar accion:</p>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+
+                <button type="submit" name="accion" value="guardar"
+                    class="flex items-center justify-center gap-2 rounded-lg border-2 border-gray-300 px-4 py-3 text-sm font-semibold text-gray-700 hover:border-gray-500">
+                    <i class="bi bi-save"></i> Solo guardar cambios
+                </button>
+
+                <button type="submit" name="accion" value="reactivar"
+                    onclick="return confirm('Reactivar la orden? Estado volvera a Pendiente para que la firma pueda subir nuevos soportes.')"
+                    class="flex items-center justify-center gap-2 rounded-lg bg-green-600 hover:bg-green-500 px-4 py-3 text-sm font-semibold text-white shadow">
+                    <i class="bi bi-arrow-clockwise"></i> Reactivar caso
+                </button>
+
+                <button type="submit" name="accion" value="devolver"
+                    onclick="return confirm('Devolver la orden a la firma para ajustes?')"
+                    class="flex items-center justify-center gap-2 rounded-lg bg-amber-500 hover:bg-amber-400 px-4 py-3 text-sm font-semibold text-white shadow">
+                    <i class="bi bi-arrow-return-left"></i> Devolver para ajustes
+                </button>
+
+                <button type="submit" name="accion" value="marcar_no_valida"
+                    onclick="return confirm('Marcar la orden como NO VALIDA? Se registrara como rechazo con tu comentario como motivo.')"
+                    class="flex items-center justify-center gap-2 rounded-lg bg-red-600 hover:bg-red-500 px-4 py-3 text-sm font-semibold text-white shadow">
+                    <i class="bi bi-x-circle"></i> Marcar NO VALIDA (rechazo)
+                </button>
+
+                <button type="submit" name="accion" value="cerrar"
+                    onclick="return confirm('Cerrar la orden? Esta quedara finalizada.')"
+                    class="flex items-center justify-center gap-2 rounded-lg bg-emerald-700 hover:bg-emerald-600 px-4 py-3 text-sm font-semibold text-white shadow">
+                    <i class="bi bi-check2-circle"></i> Cerrar caso
+                </button>
+
+                <div class="flex gap-2">
+                    <select name="nuevo_estado" class="flex-1 rounded-md border-gray-300 dark:bg-gray-700 py-2 px-2 text-sm">
+                        {% for e in estados %}
+                        <option value="{{ e.name }}" {% if e.name == tarea.estado_tarea %}selected{% endif %}>{{ e.display_name }}</option>
+                        {% endfor %}
+                    </select>
+                    <button type="submit" name="accion" value="cambiar_estado"
+                        class="rounded-md bg-indigo-600 hover:bg-indigo-500 px-3 py-2 text-xs font-semibold text-white">
+                        Cambiar estado
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="border-t border-gray-200 dark:border-gray-700 pt-4">
+            <p class="text-sm font-semibold text-gray-900 dark:text-white mb-2">Tipo de negacion</p>
+            <div class="flex gap-2 items-center">
+                <select name="tipo_negacion" class="rounded-md border-gray-300 dark:bg-gray-700 py-2 px-2 text-sm">
+                    <option value="imposibilidad" {% if tarea.tipo_negacion == 'imposibilidad' %}selected{% endif %}>Imposibilidad (tecnica)</option>
+                    <option value="rechazo" {% if tarea.tipo_negacion == 'rechazo' %}selected{% endif %}>Rechazo (por la firma)</option>
+                </select>
+                <button type="submit" name="accion" value="cambiar_tipo_negacion"
+                    class="rounded-md bg-gray-700 hover:bg-gray-600 px-3 py-2 text-xs font-semibold text-white">
+                    Cambiar tipo
+                </button>
+            </div>
+        </div>
+    </form>
+</div>
+{% endblock %}

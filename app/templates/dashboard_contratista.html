@@ -125,6 +125,11 @@
                         <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-600">
                             <div class="flex flex-col">
                                 <span class="font-medium">
+                                    {% if tarea.tipo_negacion == 'rechazo' %}
+                                        <span class="inline-block bg-red-100 text-red-800 text-xs font-semibold px-1.5 py-0.5 rounded mr-1" title="Rechazo por la firma">RECHAZO</span>
+                                    {% else %}
+                                        <span class="inline-block bg-blue-100 text-blue-800 text-xs font-semibold px-1.5 py-0.5 rounded mr-1" title="Imposibilidad tecnica">IMP</span>
+                                    {% endif %}
                                     {% if tarea.codigo_imposibilidad %}
                                         <span class="inline-block bg-purple-100 text-purple-800 text-xs font-mono px-1.5 py-0.5 rounded mr-1">#{{ tarea.codigo_imposibilidad }}</span>
                                     {% endif %}

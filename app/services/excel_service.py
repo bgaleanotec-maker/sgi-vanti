@@ -8,6 +8,7 @@ IMPOSIBILIDADES_COLUMNS = [
     'BP_Firma', 'Tipo_Asignacion', 'Filial', 'Malla',
     'Direccion_Punto_Suministro', 'Nombre_del_solicitante',
     'Descripcion_Mercado', 'N_Municipio', 'N_BP_Firma', 'Estado',
+    'Tipo_Negacion', 'Motivo_Rechazo',
     'Codigo_Imposibilidad', 'Imposibilidad_1',
     'latitud', 'longitud', 'Gestor', 'Ejecutivo', 'Tarea'
 ]
@@ -32,6 +33,7 @@ def generate_imposibilidades_template(with_examples=False):
                 'Nombre_del_solicitante': 'Juan Pérez',
                 'Descripcion_Mercado': 'Residencial', 'N_Municipio': 'Bogotá',
                 'N_BP_Firma': '900123456', 'Estado': 'Conectado',
+                'Tipo_Negacion': 'imposibilidad', 'Motivo_Rechazo': '',
                 'Codigo_Imposibilidad': 161,
                 'Imposibilidad_1': 'Distancia de acometida',
                 'latitud': '4.6789', 'longitud': '-74.0456',
@@ -46,6 +48,7 @@ def generate_imposibilidades_template(with_examples=False):
                 'Nombre_del_solicitante': 'María López',
                 'Descripcion_Mercado': 'Comercial', 'N_Municipio': 'Bogotá',
                 'N_BP_Firma': '900654321', 'Estado': 'Suspendido',
+                'Tipo_Negacion': 'rechazo', 'Motivo_Rechazo': 'Cliente no autorizo acceso al predio',
                 'Codigo_Imposibilidad': 32,
                 'Imposibilidad_1': 'Servidumbre',
                 'latitud': '4.7012', 'longitud': '-74.0678',
@@ -60,6 +63,7 @@ def generate_imposibilidades_template(with_examples=False):
                 'Nombre_del_solicitante': 'Carlos Rodríguez',
                 'Descripcion_Mercado': 'Industrial', 'N_Municipio': 'Soacha',
                 'N_BP_Firma': '900123456', 'Estado': 'Conectado',
+                'Tipo_Negacion': 'imposibilidad', 'Motivo_Rechazo': '',
                 'Codigo_Imposibilidad': 102,
                 'Imposibilidad_1': 'Vía vehicular',
                 'latitud': '4.5678', 'longitud': '-74.1234',
@@ -91,7 +95,7 @@ def generate_imposibilidades_template(with_examples=False):
             'border': 1, 'text_wrap': True
         })
 
-        KEY_COLS = {'Tipo_Asignacion', 'Filial', 'Codigo_Imposibilidad'}
+        KEY_COLS = {'Tipo_Asignacion', 'Filial', 'Codigo_Imposibilidad', 'Tipo_Negacion', 'Motivo_Rechazo'}
         for col_num, col_name in enumerate(IMPOSIBILIDADES_COLUMNS):
             if col_name in IMPOSIBILIDADES_REQUIRED:
                 fmt = required_fmt
@@ -117,6 +121,8 @@ def generate_imposibilidades_template(with_examples=False):
             '- BP_Firma: Username/ID del contratista o firma asignada (filtra la cartera que cada usuario ve)',
             '- Tipo_Asignacion: "firma" o "contratista" — aclara si BP_Firma pertenece a una firma o contratista',
             '- Filial: Filial/Sociedad dueña del negocio (visible al contratista)',
+            '- Tipo_Negacion: "imposibilidad" (tecnica, estandar) o "rechazo" (la firma rechaza el negocio)',
+            '- Motivo_Rechazo: si Tipo_Negacion=rechazo, describir el motivo del rechazo',
             '- Codigo_Imposibilidad: Código numérico de PowerBI (1-172). Se usa para trazabilidad',
             '- Imposibilidad_1: Descripción del tipo de imposibilidad',
             '- Gestor: Username del gestor asignado',
@@ -143,7 +149,7 @@ def generate_usuarios_template(with_examples=False):
     if with_examples:
         data = [
             {'username': 'FIRMA_ABC', 'email': 'firma_abc@empresa.com',
-             'rol': 'contratista', 'tipo_firma': 'firma', 'bp_firma': '1000008472',
+             'rol': 'firma', 'tipo_firma': 'firma', 'bp_firma': '1000008472',
              'celular': '573001234567', 'full_name': 'Ingenieria de Gas Natural'},
             {'username': 'contratista1', 'email': 'contratista1@empresa.com',
              'rol': 'contratista', 'tipo_firma': 'contratista', 'bp_firma': '1000008472',
@@ -196,7 +202,12 @@ def generate_usuarios_template(with_examples=False):
             'Columnas OBLIGATORIAS (en rojo): username, rol',
             'Columnas CLAVE (en naranja): tipo_firma, bp_firma',
             '',
-            'Roles válidos: admin, gestor, contratista, ejecutivo',
+            'Roles válidos: admin, firma, contratista, gestor, ejecutivo',
+            '  - firma: dueno del BP (la firma principal)',
+            '  - contratista: subcontratado por la firma (ejecuta trabajo)',
+            '  - gestor: valida gestiones',
+            '  - ejecutivo: emite cartas al cliente',
+            '  - admin: administrador total',
             'Valores tipo_firma (solo para rol contratista): firma, contratista',
             '',
             'Descripción de columnas:',

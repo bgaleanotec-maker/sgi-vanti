@@ -20,3 +20,4 @@ instance/
 /static/
 /templates/
 /test_whatsapp_direct.py
+/%TEMP%/

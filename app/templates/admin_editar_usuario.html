@@ -35,7 +35,8 @@
                     <select id="rol" name="rol"
                         class="mt-2 block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-brand-600 sm:text-sm sm:leading-6">
                         <option value="admin" {% if user.rol=='admin' %}selected{% endif %}>Administrador</option>
-                        <option value="contratista" {% if user.rol=='contratista' %}selected{% endif %}>Contratista</option>
+                        <option value="firma" {% if user.rol=='firma' %}selected{% endif %}>Firma (duena del BP)</option>
+                        <option value="contratista" {% if user.rol=='contratista' %}selected{% endif %}>Contratista (subcontratado)</option>
                         <option value="gestor" {% if user.rol=='gestor' %}selected{% endif %}>Gestor</option>
                         <option value="ejecutivo" {% if user.rol=='ejecutivo' %}selected{% endif %}>Ejecutivo</option>
                     </select>

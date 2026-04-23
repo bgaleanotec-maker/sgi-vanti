@@ -48,4 +48,8 @@ def run_safe_migrations():
     _add_column_safe('tipo_imposibilidad_config', 'codigo_numerico', 'INTEGER')
     _add_column_safe('tipo_imposibilidad_config', 'descripcion', 'VARCHAR(255)')
 
+    # Imposibilidad.tipo_negacion / motivo_rechazo
+    _add_column_safe('imposibilidad', 'tipo_negacion', "VARCHAR(20) DEFAULT 'imposibilidad'")
+    _add_column_safe('imposibilidad', 'motivo_rechazo', 'VARCHAR(500)')
+
     print("[safe_migrate] All additive migrations checked successfully")

@@ -15,7 +15,7 @@ from app.blueprints.contratista import contratista_bp
 
 @contratista_bp.route('/')
 @login_required
-@role_required('contratista')
+@role_required('contratista', 'firma')
 def dashboard():
     from app.models.catalog import EstadoTareaConfig
     filter_value = current_user.bp_firma if current_user.bp_firma else current_user.username
@@ -44,7 +44,7 @@ def dashboard():
 
 @contratista_bp.route('/gestionar/<int:id>', methods=['POST'])
 @login_required
-@role_required('contratista')
+@role_required('contratista', 'firma')
 def gestionar_tarea(id):
     tarea = Imposibilidad.query.get_or_404(id)
     filter_value = current_user.bp_firma if current_user.bp_firma else current_user.username
@@ -89,7 +89,7 @@ def gestionar_tarea(id):
 
 @contratista_bp.route('/carta/<int:id>', methods=['GET', 'POST'])
 @login_required
-@role_required('contratista')
+@role_required('contratista', 'firma')
 def gestionar_carta(id):
     tarea = Imposibilidad.query.get_or_404(id)
     filter_value = current_user.bp_firma if current_user.bp_firma else current_user.username
@@ -120,7 +120,7 @@ def gestionar_carta(id):
 
 @contratista_bp.route('/descargar_cartera')
 @login_required
-@role_required('contratista')
+@role_required('contratista', 'firma')
 def descargar_cartera():
     """Download full portfolio for this contratista/firma as XLSX."""
     import pandas as pd
@@ -174,7 +174,7 @@ def descargar_cartera():
 
 @contratista_bp.route('/perfil', methods=['GET', 'POST'])
 @login_required
-@role_required('contratista')
+@role_required('contratista', 'firma')
 def perfil():
     """Self-service profile for contratistas."""
     if request.method == 'POST':

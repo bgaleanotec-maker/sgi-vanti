@@ -35,6 +35,9 @@ class Imposibilidad(db.Model):
     tipo_asignacion = db.Column(db.String(20), nullable=True, default='contratista')
     # numeric anomaly code from PowerBI (172 types)
     codigo_imposibilidad = db.Column(db.Integer, nullable=True)
+    # tipo_negacion distingue entre imposibilidad (tecnica) y rechazo (por la firma)
+    tipo_negacion = db.Column(db.String(20), nullable=True, default='imposibilidad', index=True)
+    motivo_rechazo = db.Column(db.String(500), nullable=True)  # si tipo_negacion == 'rechazo'
 
     carta = db.relationship('Carta', backref='imposibilidad', uselist=False, cascade='all, delete-orphan')
 

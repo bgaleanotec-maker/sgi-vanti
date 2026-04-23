@@ -55,7 +55,10 @@
                         <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
                             <span class="inline-flex items-center rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset 
                                 {% if user.rol == 'admin' %} bg-purple-50 text-purple-700 ring-purple-600/20
-                                {% elif user.rol == 'contratista' %} bg-blue-50 text-blue-700 ring-blue-600/20
+                                {% elif user.rol == 'firma' %} bg-amber-50 text-amber-700 ring-amber-600/20
+                                {% elif user.rol == 'contratista' %} bg-indigo-50 text-indigo-700 ring-indigo-600/20
+                                {% elif user.rol == 'gestor' %} bg-sky-50 text-sky-700 ring-sky-600/20
+                                {% elif user.rol == 'ejecutivo' %} bg-pink-50 text-pink-700 ring-pink-600/20
                                 {% else %} bg-gray-50 text-gray-600 ring-gray-500/10 {% endif %}">
                                 {{ user.rol|capitalize }}
                             </span>

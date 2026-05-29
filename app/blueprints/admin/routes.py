@@ -43,9 +43,9 @@ def analitica():
         filtros['bp_firma'] = bp_firma
     tareas_filtradas = query.all()
     total = len(tareas_filtradas)
-    pendientes = len([t for t in tareas_filtradas if t.estado_tarea in ['pendiente', 'devuelta', 'carta_pendiente_revision']])
-    gestionadas = len([t for t in tareas_filtradas if t.estado_tarea == 'gestionado'])
-    cerradas = len([t for t in tareas_filtradas if t.estado_tarea in ['cerrada', 'carta_enviada']])
+    pendientes = len([t for t in tareas_filtradas if t.estado_tarea in ['pendiente', 'devuelta', 'escalado', 'carta_pendiente_revision']])
+    gestionadas = len([t for t in tareas_filtradas if t.estado_tarea in ['soportes_cargados', 'gestionado']])
+    cerradas = len([t for t in tareas_filtradas if t.estado_tarea in ['finalizado', 'cerrada', 'rechazado', 'rechazada', 'carta_enviada']])
     return render_template('dashboard_analitica.html',
                            total=total, pendientes=pendientes,
                            gestionadas=gestionadas, cerradas=cerradas, filtros=filtros)
@@ -125,6 +125,10 @@ def cargar_excel():
                 if tipo_negacion not in ('imposibilidad', 'rechazo'):
                     tipo_negacion = 'imposibilidad'
                 motivo_rechazo = _safe(row.get('Motivo_Rechazo'))
+                # Clasificacion de cartera: si viene en el Excel se respeta, si no se deriva
+                clasificacion = (_safe(row.get('Clasificacion')) or '').upper()
+                if clasificacion not in ('ZACO', 'INSO'):
+                    clasificacion = 'INSO' if tipo_negacion == 'rechazo' else 'ZACO'
                 codigo_raw = row.get('Codigo_Imposibilidad')
                 try:
                     codigo_imp = int(codigo_raw) if codigo_raw is not None and not pd.isna(codigo_raw) else None
@@ -157,6 +161,7 @@ def cargar_excel():
                     filial=filial,
                     tipo_negacion=tipo_negacion,
                     motivo_rechazo=motivo_rechazo,
+                    clasificacion=clasificacion,
                     codigo_imposibilidad=codigo_imp,
                     malla=_safe(row.get('Malla')),
                     direccion=_safe(row.get('Direccion_Punto_Suministro')),
@@ -336,7 +341,8 @@ def tarea_accion(id):
         if comentario_admin:
             tarea.comentarios_gestor = (tarea.comentarios_gestor or '') + f"\n[ADMIN reactivo {datetime.now():%Y-%m-%d %H:%M}]: {comentario_admin}"
     elif accion == 'devolver':
-        tarea.estado_tarea = 'devuelta'
+        # En el modelo simplificado "devolver para ajustes" regresa el caso a Pendiente
+        tarea.estado_tarea = 'pendiente'
         mensaje_usuario = (
             f"Admin devolvio la orden {tarea.orden} para ajustes. "
             f"Motivo: {comentario_admin or 'ver plataforma'}."
@@ -344,16 +350,17 @@ def tarea_accion(id):
         if comentario_admin:
             tarea.comentarios_gestor = (tarea.comentarios_gestor or '') + f"\n[ADMIN devolvio {datetime.now():%Y-%m-%d %H:%M}]: {comentario_admin}"
     elif accion == 'marcar_no_valida':
-        tarea.estado_tarea = 'rechazada'
+        tarea.estado_tarea = 'rechazado'
         tarea.tipo_negacion = 'rechazo'
+        tarea.clasificacion = 'INSO'
         tarea.motivo_rechazo = comentario_admin or 'Informacion no valida segun admin'
         mensaje_usuario = (
             f"Admin marco la orden {tarea.orden} como NO VALIDA. "
             f"Motivo: {tarea.motivo_rechazo}"
         )
     elif accion == 'cerrar':
-        tarea.estado_tarea = 'cerrada'
-        mensaje_usuario = f"Admin cerro la orden {tarea.orden}."
+        tarea.estado_tarea = 'finalizado'
+        mensaje_usuario = f"Admin finalizo la orden {tarea.orden}."
         if comentario_admin:
             tarea.comentarios_gestor = (tarea.comentarios_gestor or '') + f"\n[ADMIN cerro {datetime.now():%Y-%m-%d %H:%M}]: {comentario_admin}"
     elif accion == 'cambiar_estado' and nuevo_estado:
@@ -428,6 +435,7 @@ def descargar_excel():
     df = pd.DataFrame([{
         'ID': i.id, 'Orden': i.orden, 'Cuenta_Contrato': i.cuenta_contrato,
         'Estado_Tarea': i.estado_tarea, 'Tipo_Tarea': i.tipo_tarea,
+        'Clasificacion': i.clasificacion_efectiva, 'Tipo_Negacion': i.tipo_negacion,
         'BP_Firma': i.bp_firma, 'Gestor_Asignado': i.gestor_asignado,
         'Ejecutivo_Asignado': i.ejecutivo_asignado,
         'Comentarios_Firma': i.comentarios, 'Comentarios_Gestor': i.comentarios_gestor,

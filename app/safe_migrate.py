@@ -52,4 +52,7 @@ def run_safe_migrations():
     _add_column_safe('imposibilidad', 'tipo_negacion', "VARCHAR(20) DEFAULT 'imposibilidad'")
     _add_column_safe('imposibilidad', 'motivo_rechazo', 'VARCHAR(500)')
 
+    # Imposibilidad.clasificacion (ZACO/INSO)
+    _add_column_safe('imposibilidad', 'clasificacion', 'VARCHAR(10)')
+
     print("[safe_migrate] All additive migrations checked successfully")

@@ -18,6 +18,20 @@ def aplicar_filtros_comunes(query):
     if orden:
         query = query.filter(Imposibilidad.orden.ilike(f'%{orden}%'))
         filtros['orden'] = orden
+    clasificacion = request.args.get('clasificacion')
+    if clasificacion in ('ZACO', 'INSO'):
+        if clasificacion == 'INSO':
+            # INSO = rechazos: incluye los marcados explicitamente y los de tipo rechazo sin clasificar
+            query = query.filter(
+                (Imposibilidad.clasificacion == 'INSO') |
+                ((Imposibilidad.clasificacion.is_(None)) & (Imposibilidad.tipo_negacion == 'rechazo'))
+            )
+        else:
+            query = query.filter(
+                (Imposibilidad.clasificacion == 'ZACO') |
+                ((Imposibilidad.clasificacion.is_(None)) & (Imposibilidad.tipo_negacion != 'rechazo'))
+            )
+        filtros['clasificacion'] = clasificacion
     return query, filtros
 
 

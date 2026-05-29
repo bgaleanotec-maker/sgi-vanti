@@ -272,10 +272,11 @@ def notificar_masivo():
 # -----------------------------------------------------------------------------
 def _build_bp_summaries():
     """Build {bp_firma: {total, breakdown: {tipo: count}, filiales: [..]}} for pending tasks."""
+    # Estados que requieren accion de la firma (estados simplificados + legacy compatibles)
     pendientes = Imposibilidad.query.filter(
         (Imposibilidad.estado_tarea == 'pendiente') |
+        (Imposibilidad.estado_tarea == 'escalado') |
         (Imposibilidad.estado_tarea == 'devuelta') |
-        (Imposibilidad.estado_tarea == 'rechazada') |
         (Imposibilidad.estado_tarea.is_(None))
     ).all()
 

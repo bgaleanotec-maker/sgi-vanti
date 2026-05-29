@@ -120,6 +120,13 @@ def nuevo_ticket():
             estado='abierto',
         )
         db.session.add(ticket)
+
+        # Si el ticket esta vinculado a una orden, marca la tarea como "Caso escalado"
+        if imp_id:
+            tarea_esc = Imposibilidad.query.get(imp_id)
+            if tarea_esc and tarea_esc.estado_tarea not in ('finalizado', 'rechazado', 'carta_enviada'):
+                tarea_esc.estado_tarea = 'escalado'
+
         db.session.commit()
 
         # Notify admins

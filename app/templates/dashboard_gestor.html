@@ -32,8 +32,9 @@
                     <td>
                         <span class="badge rounded-pill 
                             {% if tarea.estado_tarea == 'pendiente' %} bg-secondary
-                            {% elif tarea.estado_tarea == 'devuelta' %} bg-warning text-dark
-                            {% elif tarea.estado_tarea == 'gestionado' %} bg-primary
+                            {% elif tarea.estado_tarea in ['devuelta', 'escalado'] %} bg-warning text-dark
+                            {% elif tarea.estado_tarea in ['soportes_cargados', 'gestionado'] %} bg-primary
+                            {% elif tarea.estado_tarea in ['rechazado', 'rechazada'] %} bg-danger
                             {% else %} bg-success {% endif %}">
                             {{ tarea.estado_tarea.replace('_', ' ')|capitalize }}
                         </span>
@@ -54,8 +55,8 @@
                                 <textarea name="comentario" class="form-control" rows="2" placeholder="Añadir comentario de gestión...">{{ tarea.comentarios_gestor or '' }}</textarea>
                             </div>
                             <div class="btn-group w-100">
-                                <button type="submit" name="accion" value="cerrada" class="btn btn-success btn-sm">Cerrar Caso</button>
-                                <button type="submit" name="accion" value="devuelta" class="btn btn-warning btn-sm">Devolver a Contratista</button>
+                                <button type="submit" name="accion" value="finalizado" class="btn btn-success btn-sm">Finalizar Caso</button>
+                                <button type="submit" name="accion" value="pendiente" class="btn btn-warning btn-sm">Devolver a Contratista</button>
                             </div>
                         </form>
                     </td>

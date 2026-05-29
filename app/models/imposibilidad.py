@@ -38,8 +38,18 @@ class Imposibilidad(db.Model):
     # tipo_negacion distingue entre imposibilidad (tecnica) y rechazo (por la firma)
     tipo_negacion = db.Column(db.String(20), nullable=True, default='imposibilidad', index=True)
     motivo_rechazo = db.Column(db.String(500), nullable=True)  # si tipo_negacion == 'rechazo'
+    # clasificacion de cartera: ZACO (imposibilidades/construccion) | INSO (rechazos/interventorias)
+    clasificacion = db.Column(db.String(10), nullable=True, index=True)
 
     carta = db.relationship('Carta', backref='imposibilidad', uselist=False, cascade='all, delete-orphan')
+
+    @property
+    def clasificacion_efectiva(self):
+        """Devuelve la clasificacion de cartera. Si no esta seteada, la deriva
+        del tipo_negacion: rechazo -> INSO, imposibilidad -> ZACO."""
+        if self.clasificacion:
+            return self.clasificacion
+        return 'INSO' if self.tipo_negacion == 'rechazo' else 'ZACO'
 
 
 class Carta(db.Model):

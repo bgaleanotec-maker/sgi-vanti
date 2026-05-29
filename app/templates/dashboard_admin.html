@@ -26,8 +26,8 @@
                     <span class="text-xs font-medium text-brand-200 uppercase tracking-wider">Pendientes</span>
                 </div>
                 <div class="flex flex-col items-center justify-center rounded-xl bg-white/10 backdrop-blur-md border border-white/20 px-5 py-3 text-white min-w-[90px]">
-                    <span class="text-2xl font-bold">{{ tareas|selectattr('estado_tarea', 'equalto', 'cerrada')|list|length }}</span>
-                    <span class="text-xs font-medium text-brand-200 uppercase tracking-wider">Cerradas</span>
+                    <span class="text-2xl font-bold">{{ tareas|selectattr('estado_tarea', 'equalto', 'finalizado')|list|length }}</span>
+                    <span class="text-xs font-medium text-brand-200 uppercase tracking-wider">Finalizadas</span>
                 </div>
             </div>
         </div>
@@ -103,15 +103,22 @@
                         <td class="whitespace-nowrap px-3 py-3">
                             <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium
                                 {% if tarea.estado_tarea == 'pendiente' %}bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300
-                                {% elif tarea.estado_tarea == 'gestionado' %}bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400
-                                {% elif tarea.estado_tarea == 'cerrada' %}bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400
-                                {% elif tarea.estado_tarea == 'carta_enviada' %}bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400
+                                {% elif tarea.estado_tarea in ['soportes_cargados', 'gestionado'] %}bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400
+                                {% elif tarea.estado_tarea in ['finalizado', 'cerrada', 'carta_enviada'] %}bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400
+                                {% elif tarea.estado_tarea in ['rechazado', 'rechazada'] %}bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400
                                 {% elif tarea.estado_tarea == 'carta_pendiente_revision' %}bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400
                                 {% else %}bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400{% endif %}">
                                 {{ tarea.estado_tarea.replace('_', ' ')|capitalize }}
                             </span>
                         </td>
-                        <td class="whitespace-nowrap px-3 py-3 text-sm text-gray-700 dark:text-gray-300 font-medium">{{ tarea.tipo_tarea|capitalize if tarea.tipo_tarea else 'Estandar' }}</td>
+                        <td class="whitespace-nowrap px-3 py-3 text-sm text-gray-700 dark:text-gray-300 font-medium">
+                            {{ tarea.tipo_tarea|capitalize if tarea.tipo_tarea else 'Estandar' }}
+                            {% if tarea.clasificacion_efectiva == 'INSO' %}
+                                <span class="ml-1 inline-block bg-red-50 text-red-700 ring-1 ring-inset ring-red-600/20 text-xs font-semibold px-1.5 py-0.5 rounded" title="Cartera INSO - Rechazos">INSO</span>
+                            {% else %}
+                                <span class="ml-1 inline-block bg-indigo-50 text-indigo-700 ring-1 ring-inset ring-indigo-600/20 text-xs font-semibold px-1.5 py-0.5 rounded" title="Cartera ZACO - Imposibilidades">ZACO</span>
+                            {% endif %}
+                        </td>
                         <td class="whitespace-nowrap px-3 py-3 text-sm text-gray-600 dark:text-gray-400 font-mono">{{ tarea.orden }}</td>
                         <td class="whitespace-nowrap px-3 py-3 text-sm text-gray-600 dark:text-gray-400 font-mono">{{ tarea.cuenta_contrato }}</td>
                         <td class="whitespace-nowrap px-3 py-3 text-sm text-gray-600 dark:text-gray-400">

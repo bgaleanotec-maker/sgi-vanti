@@ -3,7 +3,10 @@ from flask import render_template, request, redirect, url_for, flash
 from flask_login import login_required
 
 from app.extensions import db
-from app.models.catalog import EstadoTareaConfig, TipoImposibilidadConfig
+from app.models.catalog import (
+    EstadoTareaConfig, TipoImposibilidadConfig,
+    ClasificacionCarteraConfig, FirmaConfig,
+)
 from app.decorators import role_required
 from app.blueprints.admin import admin_bp
 
@@ -12,9 +15,13 @@ from app.blueprints.admin import admin_bp
 @login_required
 @role_required('admin')
 def catalogos():
-    estados = EstadoTareaConfig.query.order_by(EstadoTareaConfig.order_index).all()
+    # Solo estados activos (modelo simplificado); los legacy quedan ocultos
+    estados = EstadoTareaConfig.query.filter_by(is_active=True).order_by(EstadoTareaConfig.order_index).all()
     tipos = TipoImposibilidadConfig.query.order_by(TipoImposibilidadConfig.name).all()
-    return render_template('admin_catalogos.html', estados=estados, tipos=tipos)
+    clasificaciones = ClasificacionCarteraConfig.query.order_by(ClasificacionCarteraConfig.name).all()
+    firmas = FirmaConfig.query.order_by(FirmaConfig.nombre).all()
+    return render_template('admin_catalogos.html', estados=estados, tipos=tipos,
+                           clasificaciones=clasificaciones, firmas=firmas)
 
 
 @admin_bp.route('/catalogos/estado', methods=['POST'])

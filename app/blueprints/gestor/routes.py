@@ -28,8 +28,16 @@ def gestionar_tarea(id):
     accion = request.form.get('accion')
     tarea.comentarios_gestor = request.form.get('comentario', '').strip()
 
-    if accion in ['cerrada', 'devuelta']:
-        tarea.estado_tarea = accion
+    # Estados simplificados: finalizar el caso o devolverlo (vuelve a Pendiente)
+    accion_map = {
+        'finalizado': 'finalizado',
+        'pendiente': 'pendiente',
+        # compatibilidad con valores antiguos
+        'cerrada': 'finalizado',
+        'devuelta': 'pendiente',
+    }
+    if accion in accion_map:
+        tarea.estado_tarea = accion_map[accion]
     else:
         flash("Acción no válida", "warning")
         return redirect(url_for('gestor.dashboard'))

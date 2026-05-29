@@ -2,7 +2,10 @@
 from werkzeug.security import generate_password_hash
 from app.extensions import db
 from app.models.usuario import Usuario
-from app.models.catalog import EstadoTareaConfig, TipoImposibilidadConfig
+from app.models.catalog import (
+    EstadoTareaConfig, TipoImposibilidadConfig,
+    ClasificacionCarteraConfig, FirmaConfig,
+)
 
 
 def seed_defaults():
@@ -23,27 +26,67 @@ def seed_defaults():
         db.session.add(admin)
         print("Seeded: admin user created")
 
-    # --- Default task statuses (detailed workflow) ---
+    # --- Simplified task statuses (5 estados, solicitud Panel Ejecutivo / Gestion de Cartera) ---
     # Additive: only insert the ones that do not yet exist. Never delete existing statuses.
-    default_statuses = [
+    # Los estados legacy se mantienen en la DB pero se DESACTIVAN (is_active=False) para que
+    # las tareas historicas sigan mostrando su badge pero ya no aparezcan en filtros/tarjetas.
+    simplified_statuses = [
         ('pendiente', 'Pendiente', '#94a3b8', 0, False),
-        ('recibida', 'Recibida', '#60a5fa', 1, False),
-        ('validada', 'Validada', '#3b82f6', 2, False),
-        ('rechazada', 'Rechazada', '#ef4444', 3, False),
-        ('devuelta', 'Devuelta para ajustes', '#f59e0b', 4, False),
-        ('gestionado', 'Gestionado', '#10b981', 5, False),
-        ('cerrada', 'Cerrada', '#22c55e', 6, True),
-        ('carta_pendiente_revision', 'Carta Pendiente Revisión', '#8b5cf6', 7, False),
-        ('carta_enviada', 'Carta Enviada', '#059669', 8, True),
+        ('soportes_cargados', 'Soportes cargados', '#3b82f6', 1, False),
+        ('escalado', 'Caso escalado', '#f59e0b', 2, False),
+        ('rechazado', 'Rechazado', '#ef4444', 3, True),
+        ('finalizado', 'Finalizado', '#22c55e', 4, True),
+        # Sub-flujo de cartas (necesario para el rol ejecutivo)
+        ('carta_pendiente_revision', 'Carta Pendiente Revisión', '#8b5cf6', 5, False),
+        ('carta_enviada', 'Carta Enviada', '#059669', 6, True),
     ]
-    for name, display, color, order, is_done in default_statuses:
+    for name, display, color, order, is_done in simplified_statuses:
         existing = EstadoTareaConfig.query.filter_by(name=name).first()
         if existing is None:
             db.session.add(EstadoTareaConfig(
                 name=name, display_name=display, color=color,
-                order_index=order, is_done_state=is_done
+                order_index=order, is_done_state=is_done, is_active=True
             ))
             print(f"Seeded status: {name}")
+        else:
+            # Asegura que los estados simplificados esten activos y con datos al dia
+            existing.display_name = display
+            existing.color = color
+            existing.order_index = order
+            existing.is_done_state = is_done
+            existing.is_active = True
+
+    # Desactivar estados legacy (no se borran: las tareas historicas conservan su valor)
+    legacy_statuses = ['recibida', 'validada', 'rechazada', 'devuelta', 'gestionado', 'cerrada']
+    for name in legacy_statuses:
+        existing = EstadoTareaConfig.query.filter_by(name=name).first()
+        if existing is not None and existing.is_active:
+            existing.is_active = False
+            print(f"Deactivated legacy status: {name}")
+
+    # --- Clasificacion de cartera (ZACO / INSO) ---
+    default_clasificaciones = [
+        ('ZACO', 'ZACO - Imposibilidades', 'Cartera de imposibilidades asociada a procesos de construcción.', '#6366f1'),
+        ('INSO', 'INSO - Rechazos', 'Cartera de rechazos asociada a las interventorías.', '#ef4444'),
+    ]
+    for name, display, desc, color in default_clasificaciones:
+        if ClasificacionCarteraConfig.query.filter_by(name=name).first() is None:
+            db.session.add(ClasificacionCarteraConfig(
+                name=name, display_name=display, descripcion=desc, color=color, is_active=True
+            ))
+            print(f"Seeded clasificacion: {name}")
+
+    # --- Firmas instaladoras de inicio de implementacion ---
+    default_firmas = [
+        'Alvigas', 'Efigas Natural Ltda.', 'Camacho Construcciones',
+        'Juligas Ingeniería S.A.S.', 'Albeiro Rivera Rojas',
+        'GC Ingeniería Hidráulica', 'WF Ingeniería y Servicios S.A.S.',
+        'Arhus Ingenieros Ltda.',
+    ]
+    for nombre in default_firmas:
+        if FirmaConfig.query.filter_by(nombre=nombre).first() is None:
+            db.session.add(FirmaConfig(nombre=nombre, is_active=True))
+            print(f"Seeded firma: {nombre}")
 
     # --- Default impossibility types ---
     if not TipoImposibilidadConfig.query.first():

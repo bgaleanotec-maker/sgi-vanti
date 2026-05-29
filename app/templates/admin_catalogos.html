@@ -98,5 +98,53 @@
             </div>
         </div>
     </div>
+
+    <!-- Clasificacion de Cartera + Firmas de implementacion -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+
+        <!-- Clasificacion de cartera (ZACO / INSO) -->
+        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm ring-1 ring-gray-200 dark:ring-gray-700">
+            <div class="px-6 py-5 border-b border-gray-200 dark:border-gray-700">
+                <h2 class="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+                    <i class="bi bi-folder2-open text-indigo-500"></i> Clasificacion de Cartera
+                </h2>
+                <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Diferencia las imposibilidades (ZACO / construccion) de los rechazos (INSO / interventorias).</p>
+            </div>
+            <div class="px-6 py-4 space-y-3">
+                {% for c in clasificaciones %}
+                <div class="flex items-start gap-3 py-2 px-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
+                    <span class="inline-flex items-center rounded-md px-2 py-1 text-xs font-bold text-white" style="background-color: {{ c.color }}">{{ c.name }}</span>
+                    <div>
+                        <p class="text-sm font-medium text-gray-900 dark:text-white">{{ c.display_name }}</p>
+                        <p class="text-xs text-gray-500 dark:text-gray-400">{{ c.descripcion }}</p>
+                    </div>
+                </div>
+                {% else %}
+                <p class="text-sm text-gray-400">Sin clasificaciones configuradas.</p>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Firmas de implementacion -->
+        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm ring-1 ring-gray-200 dark:ring-gray-700">
+            <div class="px-6 py-5 border-b border-gray-200 dark:border-gray-700">
+                <h2 class="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+                    <i class="bi bi-building text-emerald-500"></i> Firmas de Implementacion
+                </h2>
+                <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Firmas instaladoras con las que inicia la implementacion de SGI Vanti.</p>
+            </div>
+            <div class="px-6 py-4 grid grid-cols-1 sm:grid-cols-2 gap-2">
+                {% for f in firmas %}
+                <div class="flex items-center gap-2 py-2 px-3 rounded-lg bg-gray-50 dark:bg-gray-700/50">
+                    <i class="bi bi-check-circle-fill text-emerald-500 text-xs"></i>
+                    <span class="text-sm text-gray-900 dark:text-white">{{ f.nombre }}</span>
+                    {% if f.bp_firma %}<span class="text-xs text-gray-400 font-mono ml-auto">BP {{ f.bp_firma }}</span>{% endif %}
+                </div>
+                {% else %}
+                <p class="text-sm text-gray-400">Sin firmas configuradas.</p>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
 </div>
 {% endblock %}

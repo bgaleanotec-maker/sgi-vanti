@@ -67,7 +67,8 @@ def dashboard():
 
     # Stats: conteo por estado para todas las tareas de los BPs vinculados
     estados = EstadoTareaConfig.query.filter_by(is_active=True).order_by(EstadoTareaConfig.order_index).all()
-    estado_map = {e.name: e for e in estados}
+    # estado_map incluye TODOS los estados (activos + legacy) para badges historicos
+    estado_map = {e.name: e for e in EstadoTareaConfig.query.all()}
     stats = {e.name: 0 for e in estados}
     total_cartas_pendientes = 0
     bps_summary = {}
@@ -80,11 +81,11 @@ def dashboard():
         if bp not in bps_summary:
             bps_summary[bp] = {'total': 0, 'pendientes': 0, 'gestionados': 0, 'devueltas': 0}
         bps_summary[bp]['total'] += 1
-        if t.estado_tarea in ('pendiente', 'recibida'):
+        if t.estado_tarea in ('pendiente', 'recibida', 'escalado'):
             bps_summary[bp]['pendientes'] += 1
-        elif t.estado_tarea == 'gestionado':
+        elif t.estado_tarea in ('soportes_cargados', 'gestionado', 'finalizado', 'cerrada'):
             bps_summary[bp]['gestionados'] += 1
-        elif t.estado_tarea in ('devuelta', 'rechazada'):
+        elif t.estado_tarea in ('devuelta', 'rechazado', 'rechazada'):
             bps_summary[bp]['devueltas'] += 1
 
     return render_template(
@@ -95,6 +96,66 @@ def dashboard():
         bps_summary=bps_summary,
         vista=vista, estado_filter=estado_filter, bp_filter=bp_filter,
     )
+
+
+@ejecutivo_bp.route('/tarea/<int:id>/solicitar_correccion', methods=['POST'])
+@login_required
+@role_required('ejecutivo')
+def solicitar_correccion(id):
+    """El ejecutivo interactua con el caso: reporta inconsistencias en los soportes
+    o solicita informacion adicional a la firma. Adjunta archivo opcional, registra
+    el comentario y regresa el caso a 'pendiente' notificando a la firma."""
+    import os
+    from app.config import Config
+    tarea = Imposibilidad.query.get_or_404(id)
+    # El ejecutivo solo puede actuar sobre tareas de los BPs que gestiona
+    bps_del_ejecutivo = [b[0] for b in db.session.query(Imposibilidad.bp_firma).filter_by(
+        ejecutivo_asignado=current_user.username).distinct().all() if b[0]]
+    if tarea.bp_firma not in bps_del_ejecutivo and tarea.ejecutivo_asignado != current_user.username:
+        abort(403)
+
+    comentario = (request.form.get('comentario') or '').strip()
+    if not comentario:
+        flash('Debes indicar la inconsistencia o la informacion requerida.', 'warning')
+        return redirect(url_for('ejecutivo.dashboard'))
+
+    archivo = request.files.get('archivo')
+    if archivo and archivo.filename:
+        filename = f"{tarea.id}_ejec_{archivo.filename}"
+        archivo.save(os.path.join(Config.UPLOADS_DIR, filename))
+        tarea.archivo_nombre = filename
+
+    sello = f"\n[EJECUTIVO {current_user.username} {datetime.now():%Y-%m-%d %H:%M}]: {comentario}"
+    tarea.comentarios_gestor = (tarea.comentarios_gestor or '') + sello
+    # Regresa el caso para que la firma corrija / cargue soportes claros
+    tarea.estado_tarea = 'pendiente'
+    db.session.commit()
+
+    # Notificar a la firma / contratista
+    from sqlalchemy import or_ as _or
+    recipientes = Usuario.query.filter(
+        _or(Usuario.username == tarea.bp_firma, Usuario.bp_firma == tarea.bp_firma),
+        Usuario.is_active == True
+    ).all()
+    mensaje = (
+        f"El ejecutivo solicita correccion en la orden {tarea.orden}. "
+        f"Detalle: {comentario}. Ingresa a SGI Vanti para ajustar la informacion."
+    )
+    subject = f"SGI Vanti - Correccion requerida en orden {tarea.orden}"
+    html = render_template('email_base.html', content=f"""
+        <p>Hola,</p>
+        <p>El ejecutivo ha revisado la orden <strong>{tarea.orden}</strong> y requiere ajustes:</p>
+        <p style="background:#fff7ed;padding:10px;border-radius:6px;">{comentario}</p>
+        <p>Por favor ingresa a la plataforma SGI Vanti para corregir o aclarar la informacion.</p>
+    """)
+    for u in recipientes:
+        try:
+            notify_user(u, subject, html, mensaje, tarea.id)
+        except Exception as e:
+            print(f"[ejecutivo.solicitar_correccion] error notificando {u.username}: {e}")
+
+    flash(f'Solicitud de correccion enviada a la firma para la orden {tarea.orden}.', 'success')
+    return redirect(url_for('ejecutivo.dashboard'))
 
 
 @ejecutivo_bp.route('/carta/<int:id>', methods=['GET', 'POST'])

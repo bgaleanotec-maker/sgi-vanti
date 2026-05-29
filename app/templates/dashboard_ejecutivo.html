@@ -106,7 +106,9 @@
                 <thead class="bg-gray-50 dark:bg-gray-700">
                     <tr>
                         <th class="px-4 py-3 text-left text-xs font-bold uppercase text-gray-500">Orden</th>
+                        <th class="px-4 py-3 text-left text-xs font-bold uppercase text-gray-500">Cuenta Contrato</th>
                         <th class="px-4 py-3 text-left text-xs font-bold uppercase text-gray-500">BP Firma</th>
+                        <th class="px-4 py-3 text-left text-xs font-bold uppercase text-gray-500">Cartera</th>
                         <th class="px-4 py-3 text-left text-xs font-bold uppercase text-gray-500">Filial</th>
                         <th class="px-4 py-3 text-left text-xs font-bold uppercase text-gray-500">Direccion</th>
                         <th class="px-4 py-3 text-left text-xs font-bold uppercase text-gray-500">Tipo</th>
@@ -119,10 +121,18 @@
                     {% for tarea in tareas %}
                     <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/50">
                         <td class="px-4 py-3 text-sm font-mono font-medium text-gray-900 dark:text-white">{{ tarea.orden }}</td>
+                        <td class="px-4 py-3 text-xs font-mono text-gray-700 dark:text-gray-300">{{ tarea.cuenta_contrato or '-' }}</td>
                         <td class="px-4 py-3 text-xs">
                             <div class="font-mono font-semibold">{{ tarea.bp_firma or '-' }}</div>
                             {% if tarea.tipo_asignacion %}
                                 <span class="text-xs text-gray-500">{{ tarea.tipo_asignacion }}</span>
+                            {% endif %}
+                        </td>
+                        <td class="px-4 py-3 text-xs">
+                            {% if tarea.clasificacion_efectiva == 'INSO' %}
+                                <span class="inline-flex items-center rounded-md bg-red-50 px-2 py-1 text-xs font-semibold text-red-700 ring-1 ring-inset ring-red-600/20" title="Rechazos / Interventorias">INSO</span>
+                            {% else %}
+                                <span class="inline-flex items-center rounded-md bg-indigo-50 px-2 py-1 text-xs font-semibold text-indigo-700 ring-1 ring-inset ring-indigo-600/20" title="Imposibilidades / Construccion">ZACO</span>
                             {% endif %}
                         </td>
                         <td class="px-4 py-3 text-xs text-gray-600 dark:text-gray-400">
@@ -187,14 +197,32 @@
                                     </form>
                                     {% endif %}
                                 </div>
-                            {% else %}
-                                <span class="text-gray-400 italic text-xs">Solo visible</span>
                             {% endif %}
+                            <!-- Interaccion con el caso: reportar inconsistencia / solicitar correccion -->
+                            <div x-data="{ open: false }" class="mt-2">
+                                <button type="button" @click="open = !open"
+                                    class="inline-flex items-center text-xs font-medium text-amber-700 hover:text-amber-900">
+                                    <i class="bi bi-pencil-square mr-1"></i> Solicitar correccion
+                                </button>
+                                <form x-show="open" x-cloak method="POST" enctype="multipart/form-data"
+                                      action="{{ url_for('ejecutivo.solicitar_correccion', id=tarea.id) }}"
+                                      class="mt-2 space-y-2 bg-amber-50 dark:bg-gray-700 p-2 rounded-md">
+                                    <textarea name="comentario" rows="2" required
+                                        class="block w-full rounded border-gray-300 dark:bg-gray-800 text-xs py-1 px-2"
+                                        placeholder="Indica la inconsistencia o informacion requerida..."></textarea>
+                                    <input type="file" name="archivo"
+                                        class="block w-full text-xs text-gray-500 file:mr-2 file:py-0.5 file:px-2 file:rounded file:border-0 file:text-xs file:bg-amber-100 file:text-amber-700">
+                                    <button type="submit"
+                                        class="w-full rounded bg-amber-600 px-2 py-1 text-xs font-semibold text-white hover:bg-amber-500">
+                                        <i class="bi bi-send mr-1"></i> Enviar a la firma
+                                    </button>
+                                </form>
+                            </div>
                         </td>
                     </tr>
                     {% else %}
                     <tr>
-                        <td colspan="8" class="px-4 py-12 text-center text-sm text-gray-500">
+                        <td colspan="10" class="px-4 py-12 text-center text-sm text-gray-500">
                             <i class="bi bi-inbox text-3xl text-gray-300 block mb-2"></i>
                             No hay tareas con los filtros aplicados.
                         </td>

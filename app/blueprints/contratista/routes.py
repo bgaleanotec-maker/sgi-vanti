@@ -25,7 +25,9 @@ def dashboard():
 
     # Stats by state + filiales summary
     estados = EstadoTareaConfig.query.filter_by(is_active=True).order_by(EstadoTareaConfig.order_index).all()
-    estado_map = {e.name: e for e in estados}
+    # estado_map incluye TODOS los estados (activos + legacy) para que tareas historicas
+    # sigan mostrando su badge correctamente.
+    estado_map = {e.name: e for e in EstadoTareaConfig.query.all()}
     stats = {e.name: 0 for e in estados}
     filiales = set()
     for t in tareas:
@@ -59,7 +61,7 @@ def gestionar_tarea(id):
         archivo.save(os.path.join(Config.UPLOADS_DIR, filename))
         tarea.archivo_nombre = filename
 
-    tarea.estado_tarea = 'gestionado'
+    tarea.estado_tarea = 'soportes_cargados'
     tarea.fecha_gestion_firma = datetime.now()
     db.session.commit()
 
@@ -81,7 +83,7 @@ def gestionar_tarea(id):
     if current_user.celular and current_user.notify_whatsapp:
         from app.services.whatsapp_service import send_whatsapp
         send_whatsapp(current_user.celular,
-                      f"Hola {current_user.username}, has gestionado la orden {tarea.orden}. Estado: Gestionado.")
+                      f"Hola {current_user.username}, has cargado los soportes de la orden {tarea.orden}. Estado: Soportes cargados.")
 
     flash("Tarea gestionada exitosamente.", "success")
     return redirect(url_for('contratista.dashboard'))
@@ -135,6 +137,7 @@ def descargar_cartera():
             'Sociedad': t.sociedad,
             'Filial': t.filial or '',
             'BP_Firma': t.bp_firma,
+            'Clasificacion': t.clasificacion_efectiva,
             'Tipo_Asignacion': t.tipo_asignacion or '',
             'Solicitante': t.solicitante,
             'Direccion': t.direccion,

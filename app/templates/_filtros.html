@@ -21,12 +21,26 @@
                             <option value="">Todos</option>
                             <option value="pendiente" {% if filtros.estado_tarea=='pendiente' %}selected{% endif %}>
                                 Pendiente</option>
-                            <option value="devuelta" {% if filtros.estado_tarea=='devuelta' %}selected{% endif %}>
-                                Devuelta</option>
-                            <option value="gestionado" {% if filtros.estado_tarea=='gestionado' %}selected{% endif %}>
-                                Gestionado</option>
-                            <option value="cerrada" {% if filtros.estado_tarea=='cerrada' %}selected{% endif %}>Cerrada
-                            </option>
+                            <option value="soportes_cargados" {% if filtros.estado_tarea=='soportes_cargados' %}selected{% endif %}>
+                                Soportes cargados</option>
+                            <option value="escalado" {% if filtros.estado_tarea=='escalado' %}selected{% endif %}>
+                                Caso escalado</option>
+                            <option value="rechazado" {% if filtros.estado_tarea=='rechazado' %}selected{% endif %}>
+                                Rechazado</option>
+                            <option value="finalizado" {% if filtros.estado_tarea=='finalizado' %}selected{% endif %}>
+                                Finalizado</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div>
+                    <label for="clasificacion" class="block text-sm font-semibold leading-6 text-gray-900">Cartera</label>
+                    <div class="mt-2">
+                        <select id="clasificacion" name="clasificacion"
+                            class="block w-full rounded-md border-0 py-2 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-brand-600 sm:text-sm sm:leading-6">
+                            <option value="">Todas</option>
+                            <option value="ZACO" {% if filtros.clasificacion=='ZACO' %}selected{% endif %}>ZACO - Imposibilidades</option>
+                            <option value="INSO" {% if filtros.clasificacion=='INSO' %}selected{% endif %}>INSO - Rechazos</option>
                         </select>
                     </div>
                 </div>

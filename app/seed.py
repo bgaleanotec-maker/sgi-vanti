@@ -4,7 +4,7 @@ from app.extensions import db
 from app.models.usuario import Usuario
 from app.models.catalog import (
     EstadoTareaConfig, TipoImposibilidadConfig,
-    ClasificacionCarteraConfig, FirmaConfig,
+    ClasificacionCarteraConfig, FirmaConfig, CodigoAnomaliaConfig,
 )
 
 
@@ -39,6 +39,8 @@ def seed_defaults():
         # Sub-flujo de cartas (necesario para el rol ejecutivo)
         ('carta_pendiente_revision', 'Carta Pendiente Revisión', '#8b5cf6', 5, False),
         ('carta_enviada', 'Carta Enviada', '#059669', 6, True),
+        # Negocio anulado (ej. negocios de prueba o anulaciones por carta vencida)
+        ('anulado', 'Anulado', '#6b7280', 7, True),
     ]
     for name, display, color, order, is_done in simplified_statuses:
         existing = EstadoTareaConfig.query.filter_by(name=name).first()
@@ -87,6 +89,21 @@ def seed_defaults():
         if FirmaConfig.query.filter_by(nombre=nombre).first() is None:
             db.session.add(FirmaConfig(nombre=nombre, is_active=True))
             print(f"Seeded firma: {nombre}")
+
+    # --- Catalogo de codigos de anomalia (motivos) ---
+    # Additive: solo inserta los que no existen; nunca borra ni sobrescribe ediciones.
+    if CodigoAnomaliaConfig.query.count() == 0:
+        try:
+            from app.data.codigos_anomalia import CODIGOS_ANOMALIA
+            for codigo, descripcion in CODIGOS_ANOMALIA:
+                db.session.add(CodigoAnomaliaConfig(
+                    codigo=str(codigo).strip(),
+                    descripcion=(descripcion or '').strip() or str(codigo),
+                    is_active=True,
+                ))
+            print(f"Seeded: {len(CODIGOS_ANOMALIA)} codigos de anomalia")
+        except Exception as e:
+            print(f"Seed codigos_anomalia error: {e}")
 
     # --- Default impossibility types ---
     if not TipoImposibilidadConfig.query.first():

@@ -1,5 +1,24 @@
-from datetime import datetime
+from datetime import datetime, date
 from app.extensions import db
+
+
+def _dias_habiles(desde, hasta):
+    """Cuenta dias habiles (lun-vie) entre dos fechas/datetimes, inclusivo del rango.
+    Devuelve None si falta 'desde'."""
+    if not desde:
+        return None
+    d0 = desde.date() if isinstance(desde, datetime) else desde
+    d1 = (hasta.date() if isinstance(hasta, datetime) else hasta) if hasta else date.today()
+    if d1 < d0:
+        return 0
+    dias = 0
+    actual = d0
+    from datetime import timedelta
+    while actual < d1:
+        actual += timedelta(days=1)
+        if actual.weekday() < 5:  # 0=lun ... 4=vie
+            dias += 1
+    return dias
 
 
 class Imposibilidad(db.Model):
@@ -40,8 +59,17 @@ class Imposibilidad(db.Model):
     motivo_rechazo = db.Column(db.String(500), nullable=True)  # si tipo_negacion == 'rechazo'
     # clasificacion de cartera: ZACO (imposibilidades/construccion) | INSO (rechazos/interventorias)
     clasificacion = db.Column(db.String(10), nullable=True, index=True)
+    # codigo de anomalia (motivo) de la columna P del cargue masivo. Se enlaza al
+    # catalogo CodigoAnomaliaConfig para mostrar la descripcion del motivo a la firma.
+    codigo_anomalia = db.Column(db.String(20), nullable=True, index=True)
+    motivo_descripcion = db.Column(db.String(300), nullable=True)
+    # fecha en que el ejecutivo marca la carta como enviada (ANS 6 dias habiles sin respuesta)
+    fecha_envio_carta = db.Column(db.DateTime, nullable=True)
 
     carta = db.relationship('Carta', backref='imposibilidad', uselist=False, cascade='all, delete-orphan')
+
+    # ANS configurable (dias habiles) para respuesta de carta de anulacion
+    ANS_CARTA_DIAS = 6
 
     @property
     def clasificacion_efectiva(self):
@@ -50,6 +78,44 @@ class Imposibilidad(db.Model):
         if self.clasificacion:
             return self.clasificacion
         return 'INSO' if self.tipo_negacion == 'rechazo' else 'ZACO'
+
+    @property
+    def motivo(self):
+        """Descripcion legible del motivo: usa la descripcion guardada, o el codigo,
+        o el motivo_rechazo de texto libre como respaldo."""
+        if self.motivo_descripcion:
+            return self.motivo_descripcion
+        if self.motivo_rechazo:
+            return self.motivo_rechazo
+        return None
+
+    @property
+    def dias_en_cartera(self):
+        """Dias calendario que el negocio lleva en cartera desde el cargue.
+        Si esta finalizado/anulado, se congela en la fecha de gestion del gestor."""
+        if not self.fecha_cargue:
+            return None
+        if self.estado_tarea in ('finalizado', 'anulado', 'carta_enviada') and self.fecha_gestion_gestor:
+            fin = self.fecha_gestion_gestor
+        else:
+            fin = datetime.now()
+        return max((fin.date() - self.fecha_cargue.date()).days, 0)
+
+    @property
+    def dias_carta_sin_respuesta(self):
+        """Dias habiles transcurridos desde el envio de la carta. Solo aplica a
+        tareas tipo carta ya enviadas y aun sin cierre."""
+        if self.tipo_tarea != 'carta' or not self.fecha_envio_carta:
+            return None
+        if self.estado_tarea in ('finalizado', 'anulado'):
+            return _dias_habiles(self.fecha_envio_carta, self.fecha_gestion_gestor)
+        return _dias_habiles(self.fecha_envio_carta, None)
+
+    @property
+    def carta_ans_vencido(self):
+        """True si la carta supero el ANS de 6 dias habiles sin respuesta."""
+        d = self.dias_carta_sin_respuesta
+        return d is not None and d >= self.ANS_CARTA_DIAS and self.estado_tarea == 'carta_enviada'
 
 
 class Carta(db.Model):

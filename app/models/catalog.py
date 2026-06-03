@@ -46,6 +46,22 @@ class ClasificacionCarteraConfig(db.Model):
         return f'<ClasificacionCartera {self.name}>'
 
 
+class CodigoAnomaliaConfig(db.Model):
+    """Catalogo editable de codigos de anomalia (motivos de rechazo/imposibilidad).
+    Cada negocio cargado puede referenciar un codigo (columna 'Codigo_Anomalia' del
+    cargue masivo); la firma instaladora ve la descripcion del motivo en su cartera."""
+    __tablename__ = 'codigo_anomalia_config'
+
+    id = db.Column(db.Integer, primary_key=True)
+    codigo = db.Column(db.String(20), unique=True, nullable=False, index=True)
+    descripcion = db.Column(db.String(300), nullable=False)
+    tipo = db.Column(db.String(20), nullable=True)  # imposibilidad | rechazo | (libre)
+    is_active = db.Column(db.Boolean, default=True)
+
+    def __repr__(self):
+        return f'<CodigoAnomalia {self.codigo}-{self.descripcion[:20]}>'
+
+
 class FirmaConfig(db.Model):
     """Catalogo de firmas instaladoras vinculadas a la implementacion SGI."""
     __tablename__ = 'firma_config'

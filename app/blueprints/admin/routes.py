@@ -45,7 +45,7 @@ def analitica():
     total = len(tareas_filtradas)
     pendientes = len([t for t in tareas_filtradas if t.estado_tarea in ['pendiente', 'devuelta', 'escalado', 'carta_pendiente_revision']])
     gestionadas = len([t for t in tareas_filtradas if t.estado_tarea in ['soportes_cargados', 'gestionado']])
-    cerradas = len([t for t in tareas_filtradas if t.estado_tarea in ['finalizado', 'cerrada', 'rechazado', 'rechazada', 'carta_enviada']])
+    cerradas = len([t for t in tareas_filtradas if t.estado_tarea in ['finalizado', 'cerrada', 'rechazado', 'rechazada', 'carta_enviada', 'anulado']])
     return render_template('dashboard_analitica.html',
                            total=total, pendientes=pendientes,
                            gestionadas=gestionadas, cerradas=cerradas, filtros=filtros)
@@ -101,6 +101,22 @@ def cargar_excel():
                 flash(f"No se encontraron registros nuevos. {duplicados_count} duplicados omitidos.", "info")
                 return redirect(url_for('admin.dashboard'))
 
+            # Filial del lote (selector en pantalla): Cundinamarca / Vanti / Ambas.
+            # Solo aplica como override cuando la fila NO trae Filial propia.
+            filial_lote = (request.form.get('filial_lote') or '').strip()
+            filial_lote_map = {
+                'cundinamarca': 'Cundinamarca', 'cundi': 'Cundinamarca',
+                'vanti': 'Vanti', 'ambas': 'Ambas',
+            }
+            filial_lote = filial_lote_map.get(filial_lote.lower(), filial_lote or None)
+
+            # Catalogo de codigos de anomalia (codigo -> descripcion) para resolver el motivo
+            from app.models.catalog import CodigoAnomaliaConfig
+            cod_anomalia_map = {
+                c.codigo.strip().upper(): c.descripcion
+                for c in CodigoAnomaliaConfig.query.all()
+            }
+
             tasks_by_firm = {}
 
             def _safe(val):
@@ -120,7 +136,16 @@ def cargar_excel():
                 tipo_tarea = (_safe(row.get('Tarea')) or 'estandar').lower()
                 firma = _safe(row.get('BP_Firma'))
                 tipo_asignacion = (_safe(row.get('Tipo_Asignacion')) or 'contratista').lower()
-                filial = _safe(row.get('Filial'))
+                # Filial: la de la fila tiene prioridad; si no, se usa la del selector del lote
+                filial = _safe(row.get('Filial')) or filial_lote
+                # Codigo de anomalia (columna P / motivo) + descripcion desde el catalogo
+                codigo_anomalia = _safe(row.get('Codigo_Anomalia'))
+                motivo_desc = None
+                if codigo_anomalia:
+                    motivo_desc = cod_anomalia_map.get(codigo_anomalia.upper())
+                # Respaldo: si no hay codigo pero viene Motivo_Rechazo de texto, se usa ese
+                if not motivo_desc:
+                    motivo_desc = _safe(row.get('Motivo_Rechazo'))
                 tipo_negacion = (_safe(row.get('Tipo_Negacion')) or 'imposibilidad').lower()
                 if tipo_negacion not in ('imposibilidad', 'rechazo'):
                     tipo_negacion = 'imposibilidad'
@@ -161,6 +186,8 @@ def cargar_excel():
                     filial=filial,
                     tipo_negacion=tipo_negacion,
                     motivo_rechazo=motivo_rechazo,
+                    codigo_anomalia=codigo_anomalia,
+                    motivo_descripcion=motivo_desc,
                     clasificacion=clasificacion,
                     codigo_imposibilidad=codigo_imp,
                     malla=_safe(row.get('Malla')),
@@ -363,6 +390,14 @@ def tarea_accion(id):
         mensaje_usuario = f"Admin finalizo la orden {tarea.orden}."
         if comentario_admin:
             tarea.comentarios_gestor = (tarea.comentarios_gestor or '') + f"\n[ADMIN cerro {datetime.now():%Y-%m-%d %H:%M}]: {comentario_admin}"
+    elif accion == 'anular':
+        tarea.estado_tarea = 'anulado'
+        tarea.fecha_gestion_gestor = datetime.now()
+        mensaje_usuario = (
+            f"Admin anulo la orden {tarea.orden}. "
+            f"Motivo: {comentario_admin or 'anulacion administrativa'}."
+        )
+        tarea.comentarios_gestor = (tarea.comentarios_gestor or '') + f"\n[ADMIN anulo {datetime.now():%Y-%m-%d %H:%M}]: {comentario_admin or 'anulacion administrativa'}"
     elif accion == 'cambiar_estado' and nuevo_estado:
         tarea.estado_tarea = nuevo_estado
         if comentario_admin:
@@ -436,10 +471,14 @@ def descargar_excel():
         'ID': i.id, 'Orden': i.orden, 'Cuenta_Contrato': i.cuenta_contrato,
         'Estado_Tarea': i.estado_tarea, 'Tipo_Tarea': i.tipo_tarea,
         'Clasificacion': i.clasificacion_efectiva, 'Tipo_Negacion': i.tipo_negacion,
+        'Filial': i.filial or '',
+        'Codigo_Anomalia': i.codigo_anomalia or '', 'Motivo': i.motivo or '',
         'BP_Firma': i.bp_firma, 'Gestor_Asignado': i.gestor_asignado,
         'Ejecutivo_Asignado': i.ejecutivo_asignado,
         'Comentarios_Firma': i.comentarios, 'Comentarios_Gestor': i.comentarios_gestor,
         'Fecha_Cargue': i.fecha_cargue.strftime('%Y-%m-%d %H:%M') if i.fecha_cargue else None,
+        'Dias_En_Cartera': i.dias_en_cartera,
+        'Dias_Carta_Sin_Respuesta': i.dias_carta_sin_respuesta,
         'Fecha_Gestion_Firma': i.fecha_gestion_firma.strftime('%Y-%m-%d %H:%M') if i.fecha_gestion_firma else None,
         'Fecha_Gestion_Gestor': i.fecha_gestion_gestor.strftime('%Y-%m-%d %H:%M') if i.fecha_gestion_gestor else None,
     } for i in data])
@@ -490,6 +529,115 @@ def purge_imposibilidades():
         db.session.rollback()
         flash(f'Error al purgar tareas: {e}', 'danger')
     return redirect(url_for('admin.dashboard'))
+
+
+def _buscar_candidatos_anulacion(filtro, patron):
+    """Devuelve la lista de Imposibilidad candidatas a anulacion segun el filtro.
+    filtro: 'patron' (busca por orden/cuenta), 'ans_vencido' (cartas ANS>6d habiles).
+    Excluye las ya anuladas."""
+    base = Imposibilidad.query.filter(Imposibilidad.estado_tarea != 'anulado')
+    if filtro == 'ans_vencido':
+        candidatos = [t for t in base.filter_by(tipo_tarea='carta', estado_tarea='carta_enviada').all()
+                      if t.carta_ans_vencido]
+        return candidatos
+    # filtro por patron de orden o cuenta (util para negocios de prueba)
+    p = (patron or '').strip()
+    if not p:
+        return []
+    like = f"%{p}%"
+    return base.filter(or_(Imposibilidad.orden.ilike(like),
+                           Imposibilidad.cuenta_contrato.ilike(like))).all()
+
+
+@admin_bp.route('/anulaciones', methods=['GET'])
+@login_required
+@role_required('admin')
+def anulaciones():
+    """Panel de anulacion masiva: busca candidatos (negocios de prueba por patron, o
+    cartas con ANS de 6 dias habiles vencido) y permite anular + enviar comunicacion."""
+    filtro = request.args.get('filtro', 'patron')
+    patron = request.args.get('patron', '')
+    candidatos = _buscar_candidatos_anulacion(filtro, patron) if (patron or filtro == 'ans_vencido') else []
+    return render_template('admin_anulaciones.html',
+                           candidatos=candidatos, filtro=filtro, patron=patron)
+
+
+@admin_bp.route('/anulaciones/ejecutar', methods=['POST'])
+@login_required
+@role_required('admin')
+def anulaciones_ejecutar():
+    """Anula las tareas seleccionadas y, opcionalmente, envia comunicacion masiva."""
+    ids = request.form.getlist('ids')
+    confirm = (request.form.get('confirm') or '').strip().lower()
+    motivo = (request.form.get('motivo') or 'Anulacion administrativa').strip()
+    enviar_comunicacion = request.form.get('enviar_comunicacion') == 'on'
+
+    if not ids:
+        flash('No seleccionaste ninguna tarea para anular.', 'warning')
+        return redirect(url_for('admin.anulaciones'))
+    if confirm != 'si':
+        flash("Debes escribir 'SI' para confirmar la anulacion masiva.", 'warning')
+        return redirect(url_for('admin.anulaciones'))
+
+    tareas = Imposibilidad.query.filter(Imposibilidad.id.in_(ids)).all()
+    anuladas = 0
+    comms_by_bp = {}
+    for t in tareas:
+        if t.estado_tarea == 'anulado':
+            continue
+        t.estado_tarea = 'anulado'
+        t.fecha_gestion_gestor = datetime.now()
+        t.comentarios_gestor = (t.comentarios_gestor or '') + \
+            f"\n[ADMIN anulo masivo {datetime.now():%Y-%m-%d %H:%M}]: {motivo}"
+        anuladas += 1
+        if enviar_comunicacion and t.bp_firma:
+            comms_by_bp.setdefault(t.bp_firma, []).append(t.orden)
+
+    try:
+        db.session.commit()
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error al anular: {e}', 'danger')
+        return redirect(url_for('admin.anulaciones'))
+
+    enviados = 0
+    if enviar_comunicacion:
+        from app.services.email_service import send_email
+        from app.services.whatsapp_service import send_whatsapp
+        for bp, ordenes in comms_by_bp.items():
+            recipientes = Usuario.query.filter(
+                or_(Usuario.username == bp, Usuario.bp_firma == bp),
+                Usuario.is_active == True
+            ).all()
+            lista = "\n".join(f"- {o}" for o in ordenes[:10])
+            extra = f"\n... y {len(ordenes)-10} mas." if len(ordenes) > 10 else ""
+            wa_msg = (
+                f"Comunicacion SGI Vanti: se ANULARON {len(ordenes)} negocio(s) del BP {bp}.\n"
+                f"Motivo: {motivo}.\n{lista}{extra}"
+            )
+            html = render_template('email_base.html', content=f"""
+                <p>Estimado(a),</p>
+                <p>Por medio de la presente se comunica la <strong>anulacion</strong> de
+                {len(ordenes)} negocio(s) asociados al BP <strong>{bp}</strong>.</p>
+                <p>Motivo: {motivo}.</p>
+                <ul>{''.join(f'<li>{o}</li>' for o in ordenes)}</ul>
+            """)
+            for u in recipientes:
+                try:
+                    if u.email and u.notify_email:
+                        send_email(u.email, f"SGI Vanti - Anulacion de negocios (BP {bp})", html)
+                        enviados += 1
+                    if u.celular and u.notify_whatsapp:
+                        send_whatsapp(u.celular, wa_msg)
+                        enviados += 1
+                except Exception as e:
+                    print(f"[anulaciones_ejecutar] error notificando {u.username}: {e}")
+
+    msg = f"{anuladas} negocio(s) anulado(s)."
+    if enviar_comunicacion:
+        msg += f" Comunicacion enviada ({enviados} notificaciones)."
+    flash(msg, 'success')
+    return redirect(url_for('admin.anulaciones'))
 
 
 @admin_bp.route('/adjuntos/<path:filename>')

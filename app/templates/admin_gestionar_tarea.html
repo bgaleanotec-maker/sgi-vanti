@@ -135,6 +135,12 @@
                     <i class="bi bi-check2-circle"></i> Cerrar caso
                 </button>
 
+                <button type="submit" name="accion" value="anular"
+                    onclick="return confirm('Anular la orden? Quedara en estado Anulado (no se borra).')"
+                    class="flex items-center justify-center gap-2 rounded-lg bg-gray-600 hover:bg-gray-500 px-4 py-3 text-sm font-semibold text-white shadow">
+                    <i class="bi bi-slash-circle"></i> Anular negocio
+                </button>
+
                 <div class="flex gap-2">
                     <select name="nuevo_estado" class="flex-1 rounded-md border-gray-300 dark:bg-gray-700 py-2 px-2 text-sm">
                         {% for e in estados %}

@@ -9,7 +9,7 @@ IMPOSIBILIDADES_COLUMNS = [
     'Direccion_Punto_Suministro', 'Nombre_del_solicitante',
     'Descripcion_Mercado', 'N_Municipio', 'N_BP_Firma', 'Estado',
     'Tipo_Negacion', 'Motivo_Rechazo', 'Clasificacion',
-    'Codigo_Imposibilidad', 'Imposibilidad_1',
+    'Codigo_Anomalia', 'Codigo_Imposibilidad', 'Imposibilidad_1',
     'latitud', 'longitud', 'Gestor', 'Ejecutivo', 'Tarea'
 ]
 
@@ -34,7 +34,7 @@ def generate_imposibilidades_template(with_examples=False):
                 'Descripcion_Mercado': 'Residencial', 'N_Municipio': 'Bogotá',
                 'N_BP_Firma': '900123456', 'Estado': 'Conectado',
                 'Tipo_Negacion': 'imposibilidad', 'Motivo_Rechazo': '', 'Clasificacion': 'ZACO',
-                'Codigo_Imposibilidad': 161,
+                'Codigo_Anomalia': '161', 'Codigo_Imposibilidad': 161,
                 'Imposibilidad_1': 'Distancia de acometida',
                 'latitud': '4.6789', 'longitud': '-74.0456',
                 'Gestor': 'gestor1', 'Ejecutivo': 'ejecutivo1', 'Tarea': 'carta'
@@ -49,7 +49,7 @@ def generate_imposibilidades_template(with_examples=False):
                 'Descripcion_Mercado': 'Comercial', 'N_Municipio': 'Bogotá',
                 'N_BP_Firma': '900654321', 'Estado': 'Suspendido',
                 'Tipo_Negacion': 'rechazo', 'Motivo_Rechazo': 'Cliente no autorizo acceso al predio', 'Clasificacion': 'INSO',
-                'Codigo_Imposibilidad': 32,
+                'Codigo_Anomalia': '115', 'Codigo_Imposibilidad': 32,
                 'Imposibilidad_1': 'Servidumbre',
                 'latitud': '4.7012', 'longitud': '-74.0678',
                 'Gestor': 'gestor1', 'Ejecutivo': 'ejecutivo1', 'Tarea': 'estandar'
@@ -64,7 +64,7 @@ def generate_imposibilidades_template(with_examples=False):
                 'Descripcion_Mercado': 'Industrial', 'N_Municipio': 'Soacha',
                 'N_BP_Firma': '900123456', 'Estado': 'Conectado',
                 'Tipo_Negacion': 'imposibilidad', 'Motivo_Rechazo': '', 'Clasificacion': 'ZACO',
-                'Codigo_Imposibilidad': 102,
+                'Codigo_Anomalia': '102', 'Codigo_Imposibilidad': 102,
                 'Imposibilidad_1': 'Vía vehicular',
                 'latitud': '4.5678', 'longitud': '-74.1234',
                 'Gestor': 'gestor1', 'Ejecutivo': '', 'Tarea': 'estandar'
@@ -95,7 +95,7 @@ def generate_imposibilidades_template(with_examples=False):
             'border': 1, 'text_wrap': True
         })
 
-        KEY_COLS = {'Tipo_Asignacion', 'Filial', 'Codigo_Imposibilidad', 'Tipo_Negacion', 'Motivo_Rechazo', 'Clasificacion'}
+        KEY_COLS = {'Tipo_Asignacion', 'Filial', 'Codigo_Anomalia', 'Codigo_Imposibilidad', 'Tipo_Negacion', 'Motivo_Rechazo', 'Clasificacion'}
         for col_num, col_name in enumerate(IMPOSIBILIDADES_COLUMNS):
             if col_name in IMPOSIBILIDADES_REQUIRED:
                 fmt = required_fmt
@@ -124,6 +124,8 @@ def generate_imposibilidades_template(with_examples=False):
             '- Tipo_Negacion: "imposibilidad" (tecnica, estandar) o "rechazo" (la firma rechaza el negocio)',
             '- Motivo_Rechazo: si Tipo_Negacion=rechazo, describir el motivo del rechazo',
             '- Clasificacion: ZACO (imposibilidades/construccion) o INSO (rechazos/interventorias). Si se deja vacio se deriva del Tipo_Negacion',
+            '- Codigo_Anomalia: Código del motivo (columna P). Puede ser numérico o alfanumérico (ej: 115, S50A).',
+            '  Si el código existe en el catálogo, la firma verá la descripción del motivo en su cartera.',
             '- Codigo_Imposibilidad: Código numérico de PowerBI (1-172). Se usa para trazabilidad',
             '- Imposibilidad_1: Descripción del tipo de imposibilidad',
             '- Gestor: Username del gestor asignado',

@@ -52,6 +52,20 @@
                     </div>
                 </div>
 
+                <div>
+                    <label for="filial_lote" class="block text-sm font-medium leading-6 text-gray-900">
+                        Filial del lote <span class="text-gray-400 font-normal">(opcional)</span>
+                    </label>
+                    <p class="text-xs text-gray-500 mb-2">Se aplica a las filas que no traigan su propia columna <span class="font-mono">Filial</span>.</p>
+                    <select name="filial_lote" id="filial_lote"
+                        class="mt-1 block w-full rounded-lg border-gray-300 py-2 text-sm bg-gray-50 focus:ring-2 focus:ring-brand-600 focus:border-brand-600">
+                        <option value="">— Usar la del Excel / no asignar —</option>
+                        <option value="Cundinamarca">Cundinamarca (Cundi)</option>
+                        <option value="Vanti">Vanti</option>
+                        <option value="Ambas">Ambas filiales</option>
+                    </select>
+                </div>
+
                 <div class="flex items-center justify-end gap-x-6 border-t border-gray-200 pt-6">
                     <a href="{{ url_for('admin.dashboard') }}"
                         class="text-sm font-semibold leading-6 text-gray-900 hover:text-brand-600">Cancelar</a>

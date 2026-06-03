@@ -181,6 +181,7 @@ def marcar_carta_enviada(id):
     if tarea.ejecutivo_asignado != current_user.username:
         abort(403)
     tarea.estado_tarea = 'carta_enviada'
+    tarea.fecha_envio_carta = datetime.now()
     db.session.commit()
 
     # Notify firma

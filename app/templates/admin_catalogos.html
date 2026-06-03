@@ -146,5 +146,65 @@
             </div>
         </div>
     </div>
+
+    <!-- Codigos de anomalia (motivos de rechazo / imposibilidad) -->
+    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm ring-1 ring-gray-200 dark:ring-gray-700">
+        <div class="px-6 py-5 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between flex-wrap gap-3">
+            <div>
+                <h2 class="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+                    <i class="bi bi-upc-scan text-rose-500"></i> Códigos de Anomalía (Motivos)
+                </h2>
+                <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                    Catálogo de motivos. Se enlazan al cargue masivo (columna <span class="font-mono">Codigo_Anomalia</span>)
+                    y la descripción es visible en la cartera de la firma. Total: <strong>{{ codigos_total }}</strong> códigos.
+                </p>
+            </div>
+            <form method="GET" action="{{ url_for('admin.catalogos') }}" class="flex gap-2">
+                <input type="text" name="q_codigo" value="{{ q_codigo }}" placeholder="Buscar código o descripción"
+                       class="rounded-lg border-0 py-2 text-sm dark:bg-gray-700 dark:text-white ring-1 ring-gray-300 dark:ring-gray-600 focus:ring-2 focus:ring-brand-600">
+                <button type="submit" class="rounded-lg bg-brand-600 px-3 py-2 text-sm font-medium text-white hover:bg-brand-700">
+                    <i class="bi bi-search"></i>
+                </button>
+            </form>
+        </div>
+        <div class="px-6 py-4">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+                {% for c in codigos %}
+                <div class="flex items-start gap-2 py-2 px-3 rounded-lg bg-gray-50 dark:bg-gray-700/50">
+                    <span class="inline-flex items-center rounded-md bg-rose-100 dark:bg-rose-900/30 text-rose-600 dark:text-rose-400 px-2 py-0.5 text-xs font-bold font-mono">{{ c.codigo }}</span>
+                    <span class="text-xs text-gray-700 dark:text-gray-200 flex-1">{{ c.descripcion }}</span>
+                    <form method="POST" action="{{ url_for('admin.guardar_codigo') }}" onsubmit="return confirm('Eliminar este código?')">
+                        <input type="hidden" name="action" value="delete">
+                        <input type="hidden" name="codigo_id" value="{{ c.id }}">
+                        <input type="hidden" name="q_codigo" value="{{ q_codigo }}">
+                        <button type="submit" class="text-gray-400 hover:text-red-500"><i class="bi bi-trash text-xs"></i></button>
+                    </form>
+                </div>
+                {% else %}
+                <p class="text-sm text-gray-400 col-span-full">Sin códigos para "{{ q_codigo }}".</p>
+                {% endfor %}
+            </div>
+            {% if not q_codigo and codigos_total > codigos|length %}
+            <p class="mt-3 text-xs text-gray-400">Mostrando los primeros {{ codigos|length }} de {{ codigos_total }}. Usa el buscador para encontrar uno específico.</p>
+            {% endif %}
+
+            <!-- Agregar / editar codigo -->
+            <div class="border-t border-gray-200 dark:border-gray-700 mt-4 pt-4">
+                <p class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">Agregar / Editar Código</p>
+                <form method="POST" action="{{ url_for('admin.guardar_codigo') }}" class="flex flex-wrap gap-2 items-center">
+                    <input type="hidden" name="action" value="create">
+                    <input type="hidden" name="q_codigo" value="{{ q_codigo }}">
+                    <input type="text" name="codigo" placeholder="Código (ej: 115, S50A)" required
+                           class="w-40 rounded-lg border-0 py-2 text-sm dark:bg-gray-700 dark:text-white ring-1 ring-gray-300 dark:ring-gray-600 focus:ring-2 focus:ring-brand-600">
+                    <input type="text" name="descripcion" placeholder="Descripción del motivo" required
+                           class="flex-1 min-w-[200px] rounded-lg border-0 py-2 text-sm dark:bg-gray-700 dark:text-white ring-1 ring-gray-300 dark:ring-gray-600 focus:ring-2 focus:ring-brand-600">
+                    <button type="submit" class="rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700">
+                        <i class="bi bi-plus-lg mr-1"></i> Guardar
+                    </button>
+                </form>
+                <p class="mt-2 text-xs text-gray-400">Si el código ya existe, se actualiza su descripción.</p>
+            </div>
+        </div>
+    </div>
 </div>
 {% endblock %}

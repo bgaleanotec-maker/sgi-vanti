@@ -55,4 +55,11 @@ def run_safe_migrations():
     # Imposibilidad.clasificacion (ZACO/INSO)
     _add_column_safe('imposibilidad', 'clasificacion', 'VARCHAR(10)')
 
+    # Imposibilidad.codigo_anomalia / motivo_descripcion (motivo visible a la firma)
+    _add_column_safe('imposibilidad', 'codigo_anomalia', 'VARCHAR(20)')
+    _add_column_safe('imposibilidad', 'motivo_descripcion', 'VARCHAR(300)')
+
+    # Imposibilidad.fecha_envio_carta (ANS 6 dias habiles para cartas)
+    _add_column_safe('imposibilidad', 'fecha_envio_carta', 'TIMESTAMP')
+
     print("[safe_migrate] All additive migrations checked successfully")

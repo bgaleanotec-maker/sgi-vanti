@@ -140,6 +140,13 @@
                                     {% endif %}
                                     {{ tarea.tipo_imposibilidad or 'N/A' }}
                                 </span>
+                                {% if tarea.motivo %}
+                                <span class="mt-1 text-xs text-gray-700 dark:text-gray-300">
+                                    <i class="bi bi-chat-left-text text-rose-500"></i>
+                                    <span class="font-medium">Motivo:</span> {{ tarea.motivo }}
+                                    {% if tarea.codigo_anomalia %}<span class="text-gray-400 font-mono">({{ tarea.codigo_anomalia }})</span>{% endif %}
+                                </span>
+                                {% endif %}
                                 <span class="text-xs text-gray-400">{{ tarea.tipo_tarea|capitalize or 'Estándar' }}</span>
                             </div>
                         </td>
@@ -154,6 +161,19 @@
                                 <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-gray-100 text-gray-800">
                                     {{ (tarea.estado_tarea or 'pendiente').replace('_', ' ')|capitalize }}
                                 </span>
+                            {% endif %}
+                            {% if tarea.dias_en_cartera is not none %}
+                            <div class="mt-1">
+                                <span class="inline-flex items-center text-xs {% if tarea.dias_en_cartera >= 15 %}text-red-600{% elif tarea.dias_en_cartera >= 8 %}text-amber-600{% else %}text-gray-400{% endif %}"
+                                      title="Días en cartera desde el cargue">
+                                    <i class="bi bi-clock-history mr-1"></i> {{ tarea.dias_en_cartera }} d
+                                </span>
+                                {% if tarea.carta_ans_vencido %}
+                                <span class="ml-1 inline-flex items-center rounded bg-red-100 text-red-700 px-1.5 py-0.5 text-xs font-semibold" title="ANS de carta vencido (6 días hábiles)">
+                                    <i class="bi bi-envelope-exclamation mr-1"></i> ANS vencido
+                                </span>
+                                {% endif %}
+                            </div>
                             {% endif %}
                         </td>
                         <td class="px-3 py-4 text-sm text-gray-500">

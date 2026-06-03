@@ -69,19 +69,50 @@
     <!-- Filtros -->
     {% include '_filtros.html' %}
 
+    <!-- Form independiente para anulacion masiva (los checkboxes se asocian via form="anular-form") -->
+    <form id="anular-form" method="POST" action="{{ url_for('admin.anulaciones_ejecutar') }}" class="hidden">
+        <input type="hidden" name="origen" value="dashboard">
+        <input type="hidden" name="confirm" value="si">
+        <input type="hidden" name="motivo" id="motivo-anular" value="Anulacion administrativa">
+    </form>
+
     <!-- Table -->
     <div class="bg-white dark:bg-gray-800 shadow-sm ring-1 ring-gray-200 dark:ring-gray-700 rounded-xl overflow-hidden">
-        <div class="border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 px-4 py-4 sm:px-6 flex items-center justify-between">
+        <div class="border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 px-4 py-4 sm:px-6 flex flex-wrap items-center justify-between gap-3">
             <div>
                 <h3 class="text-base font-semibold text-gray-900 dark:text-white">Vista Maestra de Tareas</h3>
                 <p class="mt-0.5 text-sm text-gray-500 dark:text-gray-400">{{ tareas|length }} registros</p>
+            </div>
+            <!-- Barra de anulacion masiva -->
+            <div class="flex flex-wrap items-center gap-2">
+                <span id="sel-count" class="text-sm font-medium text-gray-600 dark:text-gray-300">0 seleccionados</span>
+                <button type="button" onclick="document.querySelectorAll('.row-check').forEach(c=>{c.checked=true});actualizarSeleccion();"
+                        class="inline-flex items-center rounded-lg bg-white dark:bg-gray-700 px-3 py-1.5 text-xs font-medium text-gray-700 dark:text-gray-300 ring-1 ring-gray-300 dark:ring-gray-600 hover:bg-gray-50">
+                    <i class="bi bi-check-all mr-1"></i> Seleccionar todos ({{ tareas|length }})
+                </button>
+                <button type="button" onclick="document.querySelectorAll('.row-check').forEach(c=>{c.checked=false});actualizarSeleccion();"
+                        class="inline-flex items-center rounded-lg bg-white dark:bg-gray-700 px-3 py-1.5 text-xs font-medium text-gray-700 dark:text-gray-300 ring-1 ring-gray-300 dark:ring-gray-600 hover:bg-gray-50">
+                    <i class="bi bi-x-lg mr-1"></i> Limpiar
+                </button>
+                <label class="inline-flex items-center gap-1 text-xs text-gray-600 dark:text-gray-300 ml-1">
+                    <input type="checkbox" name="enviar_comunicacion" form="anular-form" class="rounded border-gray-300 text-brand-600 focus:ring-brand-500">
+                    Avisar firmas
+                </label>
+                <button type="submit" id="btn-anular" form="anular-form" disabled onclick="return confirmarAnulacion();"
+                        class="inline-flex items-center rounded-lg bg-gray-600 px-4 py-1.5 text-sm font-semibold text-white shadow hover:bg-gray-700 disabled:opacity-40 disabled:cursor-not-allowed">
+                    <i class="bi bi-slash-circle mr-1.5"></i> Anular seleccionados
+                </button>
             </div>
         </div>
         <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
                 <thead class="bg-gray-50 dark:bg-gray-800/50">
                     <tr>
-                        <th class="py-3 pl-4 pr-3 text-left text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 sm:pl-6">Acciones</th>
+                        <th class="py-3 pl-4 pr-2 text-left sm:pl-6">
+                            <input type="checkbox" id="check-all" onclick="toggleTodos(this)" title="Seleccionar todos"
+                                   class="rounded border-gray-300 text-brand-600 focus:ring-brand-500">
+                        </th>
+                        <th class="py-3 pl-2 pr-3 text-left text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Acciones</th>
                         <th class="px-3 py-3 text-left text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Estado</th>
                         <th class="px-3 py-3 text-left text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Tipo</th>
                         <th class="px-3 py-3 text-left text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Orden</th>
@@ -93,8 +124,16 @@
                 </thead>
                 <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
                     {% for tarea in tareas %}
-                    <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
-                        <td class="whitespace-nowrap py-3 pl-4 pr-3 sm:pl-6">
+                    <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors {% if tarea.estado_tarea == 'anulado' %}opacity-60{% endif %}">
+                        <td class="whitespace-nowrap py-3 pl-4 pr-2 sm:pl-6">
+                            {% if tarea.estado_tarea != 'anulado' %}
+                            <input type="checkbox" name="ids" value="{{ tarea.id }}" form="anular-form"
+                                   class="row-check rounded border-gray-300 text-brand-600 focus:ring-brand-500" onclick="actualizarSeleccion()">
+                            {% else %}
+                            <span class="text-gray-300" title="Ya anulado"><i class="bi bi-slash-circle"></i></span>
+                            {% endif %}
+                        </td>
+                        <td class="whitespace-nowrap py-3 pl-2 pr-3">
                             <a href="{{ url_for('admin.gestionar_tarea', id=tarea.id) }}"
                                 class="h-7 w-7 rounded-full bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-100 inline-flex items-center justify-center transition-colors mr-1"
                                 title="Gestionar (modificar / reactivar / devolver / marcar no valida)">
@@ -140,7 +179,7 @@
                     </tr>
                     {% else %}
                     <tr>
-                        <td colspan="8" class="px-3 py-12 text-center text-sm text-gray-500 dark:text-gray-400">
+                        <td colspan="9" class="px-3 py-12 text-center text-sm text-gray-500 dark:text-gray-400">
                             <div class="flex flex-col items-center">
                                 <i class="bi bi-inbox text-4xl text-gray-300 dark:text-gray-600 mb-3"></i>
                                 <p>No se encontraron tareas.</p>
@@ -153,6 +192,31 @@
         </div>
     </div>
 </div>
+
+<script>
+function actualizarSeleccion() {
+    var checks = document.querySelectorAll('.row-check');
+    var sel = document.querySelectorAll('.row-check:checked');
+    var n = sel.length;
+    document.getElementById('sel-count').textContent = n + ' seleccionados';
+    document.getElementById('btn-anular').disabled = (n === 0);
+    var all = document.getElementById('check-all');
+    if (all) { all.checked = (n > 0 && n === checks.length); all.indeterminate = (n > 0 && n < checks.length); }
+}
+function toggleTodos(master) {
+    document.querySelectorAll('.row-check').forEach(function(c){ c.checked = master.checked; });
+    actualizarSeleccion();
+}
+function confirmarAnulacion() {
+    var n = document.querySelectorAll('.row-check:checked').length;
+    if (n === 0) { return false; }
+    var motivo = prompt('Motivo de la anulacion de ' + n + ' negocio(s):', 'Anulacion administrativa');
+    if (motivo === null) { return false; }
+    document.getElementById('motivo-anular').value = motivo || 'Anulacion administrativa';
+    return confirm('Vas a ANULAR ' + n + ' negocio(s). Quedaran en estado Anulado (no se borran). Continuar?');
+}
+document.addEventListener('DOMContentLoaded', actualizarSeleccion);
+</script>
 
 {% include '_asistente.html' %}
 {% endblock %}

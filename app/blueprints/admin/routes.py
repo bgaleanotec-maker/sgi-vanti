@@ -571,15 +571,17 @@ def anulaciones_ejecutar():
     confirm = (request.form.get('confirm') or '').strip().lower()
     motivo = (request.form.get('motivo') or 'Anulacion administrativa').strip()
     enviar_comunicacion = request.form.get('enviar_comunicacion') == 'on'
+    # A donde regresar: dashboard (cuando se anula desde la vista maestra) o anulaciones
+    destino = 'admin.dashboard' if request.form.get('origen') == 'dashboard' else 'admin.anulaciones'
 
     if not ids:
         flash('No seleccionaste ninguna tarea para anular.', 'warning')
-        return redirect(url_for('admin.anulaciones'))
+        return redirect(url_for(destino))
     if confirm != 'si':
-        flash("Debes escribir 'SI' para confirmar la anulacion masiva.", 'warning')
-        return redirect(url_for('admin.anulaciones'))
+        flash("Debes confirmar la anulacion para continuar.", 'warning')
+        return redirect(url_for(destino))
 
-    tareas = Imposibilidad.query.filter(Imposibilidad.id.in_(ids)).all()
+    tareas = Imposibilidad.query.filter(Imposibilidad.id.in_([int(i) for i in ids if str(i).isdigit()])).all()
     anuladas = 0
     comms_by_bp = {}
     for t in tareas:
@@ -637,7 +639,7 @@ def anulaciones_ejecutar():
     if enviar_comunicacion:
         msg += f" Comunicacion enviada ({enviados} notificaciones)."
     flash(msg, 'success')
-    return redirect(url_for('admin.anulaciones'))
+    return redirect(url_for(destino))
 
 
 @admin_bp.route('/adjuntos/<path:filename>')

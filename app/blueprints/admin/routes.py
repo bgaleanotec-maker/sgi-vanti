@@ -17,18 +17,43 @@ from app.config import Config
 from app.blueprints.admin import admin_bp
 
 
-@admin_bp.route('/')
-@login_required
-@role_required('admin')
-def dashboard():
+def _query_tareas_admin():
+    """Construye el query de tareas del admin aplicando TODOS los filtros vigentes
+    (estado, cuenta, orden, clasificacion y bp_firma). Reutilizable por el dashboard
+    y por la anulacion masiva 'todos los que coinciden con el filtro'."""
     query = Imposibilidad.query
     query, filtros = aplicar_filtros_comunes(query)
     bp_firma = request.args.get('bp_firma')
     if bp_firma:
         query = query.filter(Imposibilidad.bp_firma.ilike(f'%{bp_firma}%'))
         filtros['bp_firma'] = bp_firma
-    tareas = query.all()
-    return render_template('dashboard_admin.html', tareas=tareas, user=current_user, filtros=filtros)
+    return query, filtros
+
+
+@admin_bp.route('/')
+@login_required
+@role_required('admin')
+def dashboard():
+    from urllib.parse import urlencode
+    query, filtros = _query_tareas_admin()
+    query = query.order_by(Imposibilidad.id.desc())
+
+    # Paginacion: 50 por pagina (configurable via ?per_page=)
+    page = request.args.get('page', 1, type=int)
+    per_page = request.args.get('per_page', 50, type=int)
+    per_page = max(10, min(per_page, 500))  # cota de seguridad
+    pagination = query.paginate(page=page, per_page=per_page, error_out=False)
+
+    # Querystring con los filtros vigentes (sin 'page') para conservarlos en los
+    # enlaces de paginacion y en el form de anulacion masiva por filtro.
+    args = request.args.to_dict(flat=True)
+    args.pop('page', None)
+    filter_qs = urlencode(args)
+
+    return render_template('dashboard_admin.html',
+                           tareas=pagination.items, pagination=pagination,
+                           total_filtrado=pagination.total, filter_qs=filter_qs,
+                           user=current_user, filtros=filtros)
 
 
 @admin_bp.route('/analitica')
@@ -573,6 +598,14 @@ def anulaciones_ejecutar():
     enviar_comunicacion = request.form.get('enviar_comunicacion') == 'on'
     # A donde regresar: dashboard (cuando se anula desde la vista maestra) o anulaciones
     destino = 'admin.dashboard' if request.form.get('origen') == 'dashboard' else 'admin.anulaciones'
+
+    # Modo "seleccionar TODOS los que coinciden con el filtro": ignora los checkboxes
+    # de la pagina y reconstruye el query con los filtros vigentes (que viajan en el
+    # querystring del action del formulario, por eso aplican request.args).
+    if request.form.get('seleccionar_todos_filtro') == '1':
+        q, _ = _query_tareas_admin()
+        q = q.filter(Imposibilidad.estado_tarea != 'anulado')
+        ids = [str(r.id) for r in q.with_entities(Imposibilidad.id).all()]
 
     if not ids:
         flash('No seleccionaste ninguna tarea para anular.', 'warning')

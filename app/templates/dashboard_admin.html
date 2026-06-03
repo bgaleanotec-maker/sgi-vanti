@@ -69,11 +69,15 @@
     <!-- Filtros -->
     {% include '_filtros.html' %}
 
-    <!-- Form independiente para anulacion masiva (los checkboxes se asocian via form="anular-form") -->
-    <form id="anular-form" method="POST" action="{{ url_for('admin.anulaciones_ejecutar') }}" class="hidden">
+    <!-- Form independiente para anulacion masiva (los checkboxes se asocian via form="anular-form").
+         El action incluye los filtros vigentes en el querystring para que el modo
+         "todos los del filtro" pueda reconstruir el query en el servidor. -->
+    <form id="anular-form" method="POST"
+          action="{{ url_for('admin.anulaciones_ejecutar') }}{% if filter_qs %}?{{ filter_qs }}{% endif %}" class="hidden">
         <input type="hidden" name="origen" value="dashboard">
         <input type="hidden" name="confirm" value="si">
         <input type="hidden" name="motivo" id="motivo-anular" value="Anulacion administrativa">
+        <input type="hidden" name="seleccionar_todos_filtro" id="sel-todos-filtro" value="">
     </form>
 
     <!-- Table -->
@@ -81,16 +85,21 @@
         <div class="border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 px-4 py-4 sm:px-6 flex flex-wrap items-center justify-between gap-3">
             <div>
                 <h3 class="text-base font-semibold text-gray-900 dark:text-white">Vista Maestra de Tareas</h3>
-                <p class="mt-0.5 text-sm text-gray-500 dark:text-gray-400">{{ tareas|length }} registros</p>
+                <p class="mt-0.5 text-sm text-gray-500 dark:text-gray-400">
+                    {{ total_filtrado }} registros{% if filtros %} (filtrados){% endif %}
+                    {% if pagination and pagination.pages > 1 %}
+                        · pág. {{ pagination.page }} de {{ pagination.pages }}
+                    {% endif %}
+                </p>
             </div>
             <!-- Barra de anulacion masiva -->
             <div class="flex flex-wrap items-center gap-2">
                 <span id="sel-count" class="text-sm font-medium text-gray-600 dark:text-gray-300">0 seleccionados</span>
-                <button type="button" onclick="document.querySelectorAll('.row-check').forEach(c=>{c.checked=true});actualizarSeleccion();"
+                <button type="button" onclick="seleccionarPagina(true)"
                         class="inline-flex items-center rounded-lg bg-white dark:bg-gray-700 px-3 py-1.5 text-xs font-medium text-gray-700 dark:text-gray-300 ring-1 ring-gray-300 dark:ring-gray-600 hover:bg-gray-50">
-                    <i class="bi bi-check-all mr-1"></i> Seleccionar todos ({{ tareas|length }})
+                    <i class="bi bi-check-all mr-1"></i> Esta página ({{ tareas|length }})
                 </button>
-                <button type="button" onclick="document.querySelectorAll('.row-check').forEach(c=>{c.checked=false});actualizarSeleccion();"
+                <button type="button" onclick="seleccionarPagina(false)"
                         class="inline-flex items-center rounded-lg bg-white dark:bg-gray-700 px-3 py-1.5 text-xs font-medium text-gray-700 dark:text-gray-300 ring-1 ring-gray-300 dark:ring-gray-600 hover:bg-gray-50">
                     <i class="bi bi-x-lg mr-1"></i> Limpiar
                 </button>
@@ -103,6 +112,20 @@
                     <i class="bi bi-slash-circle mr-1.5"></i> Anular seleccionados
                 </button>
             </div>
+        </div>
+
+        <!-- Banner: seleccionar TODOS los que coinciden con el filtro (cruza paginas) -->
+        <div id="banner-todos" class="hidden bg-amber-50 dark:bg-amber-900/20 border-b border-amber-200 dark:border-amber-800 px-4 py-2.5 sm:px-6 text-sm text-amber-800 dark:text-amber-300">
+            <span id="banner-pagina-msg">Se seleccionaron las {{ tareas|length }} de esta página.</span>
+            {% if total_filtrado > tareas|length %}
+            <button type="button" onclick="seleccionarTodosFiltro()" class="ml-1 font-semibold underline hover:text-amber-900">
+                Seleccionar los {{ total_filtrado }} que coinciden con el filtro
+            </button>
+            {% endif %}
+            <span id="banner-todos-msg" class="hidden font-semibold">
+                <i class="bi bi-check2-all"></i> Los {{ total_filtrado }} registros que coinciden con el filtro están seleccionados.
+                <button type="button" onclick="seleccionarPagina(false)" class="ml-1 underline">Deshacer</button>
+            </span>
         </div>
         <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
@@ -190,31 +213,106 @@
                 </tbody>
             </table>
         </div>
+
+        <!-- Navegacion de paginas -->
+        {% if pagination and pagination.pages > 1 %}
+        <div class="flex items-center justify-between border-t border-gray-200 dark:border-gray-700 px-4 py-3 sm:px-6">
+            <p class="text-sm text-gray-500 dark:text-gray-400">
+                Mostrando
+                <span class="font-medium">{{ (pagination.page - 1) * pagination.per_page + 1 }}</span>
+                –
+                <span class="font-medium">{{ (pagination.page - 1) * pagination.per_page + tareas|length }}</span>
+                de <span class="font-medium">{{ total_filtrado }}</span>
+            </p>
+            <div class="flex items-center gap-1">
+                {% set base = '?' ~ filter_qs ~ ('&' if filter_qs else '') %}
+                <a href="{{ base }}page={{ pagination.prev_num if pagination.has_prev else 1 }}"
+                   class="inline-flex items-center rounded-md px-3 py-1.5 text-sm font-medium ring-1 ring-gray-300 dark:ring-gray-600 {% if not pagination.has_prev %}pointer-events-none opacity-40{% else %}hover:bg-gray-50 dark:hover:bg-gray-700{% endif %}">
+                    <i class="bi bi-chevron-left"></i>
+                </a>
+                {% for p in pagination.iter_pages(left_edge=1, left_current=2, right_current=2, right_edge=1) %}
+                    {% if p %}
+                        <a href="{{ base }}page={{ p }}"
+                           class="inline-flex items-center rounded-md px-3 py-1.5 text-sm font-medium {% if p == pagination.page %}bg-brand-600 text-white{% else %}ring-1 ring-gray-300 dark:ring-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700{% endif %}">
+                            {{ p }}
+                        </a>
+                    {% else %}
+                        <span class="px-2 text-gray-400">…</span>
+                    {% endif %}
+                {% endfor %}
+                <a href="{{ base }}page={{ pagination.next_num if pagination.has_next else pagination.pages }}"
+                   class="inline-flex items-center rounded-md px-3 py-1.5 text-sm font-medium ring-1 ring-gray-300 dark:ring-gray-600 {% if not pagination.has_next %}pointer-events-none opacity-40{% else %}hover:bg-gray-50 dark:hover:bg-gray-700{% endif %}">
+                    <i class="bi bi-chevron-right"></i>
+                </a>
+            </div>
+        </div>
+        {% endif %}
     </div>
 </div>
 
 <script>
+// Modo de seleccion: 'pagina' (checkboxes visibles) o 'filtro' (todos los que coinciden).
+var modoSeleccion = 'pagina';
+var TOTAL_FILTRADO = {{ total_filtrado }};
+var EN_PAGINA = {{ tareas|length }};
+
 function actualizarSeleccion() {
     var checks = document.querySelectorAll('.row-check');
     var sel = document.querySelectorAll('.row-check:checked');
     var n = sel.length;
-    document.getElementById('sel-count').textContent = n + ' seleccionados';
-    document.getElementById('btn-anular').disabled = (n === 0);
+    var btn = document.getElementById('btn-anular');
     var all = document.getElementById('check-all');
+
+    if (modoSeleccion === 'filtro') {
+        document.getElementById('sel-count').textContent = TOTAL_FILTRADO + ' seleccionados (filtro)';
+        btn.disabled = (TOTAL_FILTRADO === 0);
+        return;
+    }
+    document.getElementById('sel-count').textContent = n + ' seleccionados';
+    btn.disabled = (n === 0);
     if (all) { all.checked = (n > 0 && n === checks.length); all.indeterminate = (n > 0 && n < checks.length); }
+
+    // Banner: aparece cuando toda la pagina esta seleccionada y hay mas en el filtro
+    var banner = document.getElementById('banner-todos');
+    if (banner) {
+        if (n > 0 && n === checks.length) { banner.classList.remove('hidden'); }
+        else { banner.classList.add('hidden'); }
+    }
 }
-function toggleTodos(master) {
-    document.querySelectorAll('.row-check').forEach(function(c){ c.checked = master.checked; });
+
+function seleccionarPagina(valor) {
+    modoSeleccion = 'pagina';
+    document.getElementById('sel-todos-filtro').value = '';
+    document.querySelectorAll('.row-check').forEach(function(c){ c.checked = valor; });
+    var bp = document.getElementById('banner-pagina-msg');
+    var bt = document.getElementById('banner-todos-msg');
+    if (bp) bp.classList.remove('hidden');
+    if (bt) bt.classList.add('hidden');
     actualizarSeleccion();
 }
+
+function toggleTodos(master) { seleccionarPagina(master.checked); }
+
+// Selecciona TODOS los que coinciden con el filtro (cruza todas las paginas).
+// No marca checkboxes individuales: activa el flag que el servidor interpreta.
+function seleccionarTodosFiltro() {
+    modoSeleccion = 'filtro';
+    document.getElementById('sel-todos-filtro').value = '1';
+    document.getElementById('banner-pagina-msg').classList.add('hidden');
+    document.getElementById('banner-todos-msg').classList.remove('hidden');
+    actualizarSeleccion();
+}
+
 function confirmarAnulacion() {
-    var n = document.querySelectorAll('.row-check:checked').length;
+    var n = (modoSeleccion === 'filtro') ? TOTAL_FILTRADO
+            : document.querySelectorAll('.row-check:checked').length;
     if (n === 0) { return false; }
     var motivo = prompt('Motivo de la anulacion de ' + n + ' negocio(s):', 'Anulacion administrativa');
     if (motivo === null) { return false; }
     document.getElementById('motivo-anular').value = motivo || 'Anulacion administrativa';
     return confirm('Vas a ANULAR ' + n + ' negocio(s). Quedaran en estado Anulado (no se borran). Continuar?');
 }
+
 document.addEventListener('DOMContentLoaded', actualizarSeleccion);
 </script>
 

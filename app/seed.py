@@ -36,11 +36,8 @@ def seed_defaults():
         ('escalado', 'Caso escalado', '#f59e0b', 2, False),
         ('rechazado', 'Rechazado', '#ef4444', 3, True),
         ('finalizado', 'Finalizado', '#22c55e', 4, True),
-        # Sub-flujo de cartas (necesario para el rol ejecutivo)
-        ('carta_pendiente_revision', 'Carta Pendiente Revisión', '#8b5cf6', 5, False),
-        ('carta_enviada', 'Carta Enviada', '#059669', 6, True),
         # Negocio anulado (ej. negocios de prueba o anulaciones por carta vencida)
-        ('anulado', 'Anulado', '#6b7280', 7, True),
+        ('anulado', 'Anulado', '#6b7280', 5, True),
     ]
     for name, display, color, order, is_done in simplified_statuses:
         existing = EstadoTareaConfig.query.filter_by(name=name).first()
@@ -59,7 +56,10 @@ def seed_defaults():
             existing.is_active = True
 
     # Desactivar estados legacy (no se borran: las tareas historicas conservan su valor)
-    legacy_statuses = ['recibida', 'validada', 'rechazada', 'devuelta', 'gestionado', 'cerrada']
+    # Los estados de carta se desactivan: confunden a la firma y el flujo de cartas
+    # ya no se usa como etapa visible (solicitud HERRAMIENTA SGI 09.06.2026).
+    legacy_statuses = ['recibida', 'validada', 'rechazada', 'devuelta', 'gestionado', 'cerrada',
+                       'carta_pendiente_revision', 'carta_enviada']
     for name in legacy_statuses:
         existing = EstadoTareaConfig.query.filter_by(name=name).first()
         if existing is not None and existing.is_active:

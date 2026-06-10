@@ -158,6 +158,80 @@ def solicitar_correccion(id):
     return redirect(url_for('ejecutivo.dashboard'))
 
 
+@ejecutivo_bp.route('/tarea/<int:id>/cambiar_estado', methods=['POST'])
+@login_required
+@role_required('ejecutivo')
+def cambiar_estado(id):
+    """El ejecutivo cambia el estado del negocio (rechazado, escalado, anulado,
+    finalizado, etc.), tipicamente cuando la firma ya cargo los soportes. Solo
+    puede actuar sobre tareas de los BPs que gestiona. Notifica a la firma."""
+    from app.models.catalog import EstadoTareaConfig
+    tarea = Imposibilidad.query.get_or_404(id)
+
+    # Scope: solo BPs del ejecutivo (o tareas asignadas a el)
+    bps_del_ejecutivo = [b[0] for b in db.session.query(Imposibilidad.bp_firma).filter_by(
+        ejecutivo_asignado=current_user.username).distinct().all() if b[0]]
+    if tarea.bp_firma not in bps_del_ejecutivo and tarea.ejecutivo_asignado != current_user.username:
+        abort(403)
+
+    nuevo_estado = (request.form.get('nuevo_estado') or '').strip()
+    comentario = (request.form.get('comentario') or '').strip()
+
+    # Solo estados activos (dinamico/configurable desde catalogos)
+    estados_validos = {e.name for e in EstadoTareaConfig.query.filter_by(is_active=True).all()}
+    if nuevo_estado not in estados_validos:
+        flash('Estado no valido.', 'warning')
+        return redirect(url_for('ejecutivo.dashboard'))
+
+    anterior = tarea.estado_tarea
+    tarea.estado_tarea = nuevo_estado
+
+    # Ajustes coherentes con el estado destino
+    if nuevo_estado == 'rechazado':
+        tarea.tipo_negacion = 'rechazo'
+        if not tarea.clasificacion:
+            tarea.clasificacion = 'INSO'
+        if comentario:
+            tarea.motivo_rechazo = comentario
+    if nuevo_estado in ('rechazado', 'finalizado', 'anulado'):
+        tarea.fecha_gestion_gestor = datetime.now()
+
+    sello = f"\n[EJECUTIVO {current_user.username} {datetime.now():%Y-%m-%d %H:%M}] estado {anterior}->{nuevo_estado}"
+    if comentario:
+        sello += f": {comentario}"
+    tarea.comentarios_gestor = (tarea.comentarios_gestor or '') + sello
+    db.session.commit()
+
+    # Notificar a la firma / contratista
+    from sqlalchemy import or_ as _or
+    recipientes = Usuario.query.filter(
+        _or(Usuario.username == tarea.bp_firma, Usuario.bp_firma == tarea.bp_firma),
+        Usuario.is_active == True
+    ).all()
+    estado_cfg = EstadoTareaConfig.query.filter_by(name=nuevo_estado).first()
+    estado_label = estado_cfg.display_name if estado_cfg else nuevo_estado
+    mensaje = (
+        f"El ejecutivo actualizo la orden {tarea.orden} a estado '{estado_label}'."
+        + (f" Nota: {comentario}." if comentario else "")
+    )
+    subject = f"SGI Vanti - Orden {tarea.orden} actualizada a {estado_label}"
+    html = render_template('email_base.html', content=f"""
+        <p>Hola,</p>
+        <p>El ejecutivo actualizo la orden <strong>{tarea.orden}</strong> al estado
+        <strong>{estado_label}</strong>.</p>
+        {f'<p style="background:#f1f5f9;padding:10px;border-radius:6px;">{comentario}</p>' if comentario else ''}
+        <p>Ingresa a la plataforma SGI Vanti para ver el detalle.</p>
+    """)
+    for u in recipientes:
+        try:
+            notify_user(u, subject, html, mensaje, tarea.id)
+        except Exception as e:
+            print(f"[ejecutivo.cambiar_estado] error notificando {u.username}: {e}")
+
+    flash(f"Orden {tarea.orden} actualizada a '{estado_label}'.", 'success')
+    return redirect(url_for('ejecutivo.dashboard'))
+
+
 @ejecutivo_bp.route('/carta/<int:id>', methods=['GET', 'POST'])
 @login_required
 @role_required('ejecutivo')

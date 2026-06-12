@@ -93,15 +93,15 @@ def nuevo_ticket():
             flash('Asunto y descripcion son obligatorios.', 'warning')
             return redirect(request.url)
 
-        # Save evidence file if provided
+        # Save evidence file if provided (persistente en DB, sobrevive deploys)
         archivo_nombre = None
         archivo = request.files.get('archivo')
         if archivo and archivo.filename:
             safe_name = secure_filename(archivo.filename)
             archivo_nombre = f"ticket_{current_user.id}_{datetime.now().strftime('%Y%m%d%H%M%S')}_{safe_name}"
             try:
-                os.makedirs(Config.UPLOADS_DIR, exist_ok=True)
-                archivo.save(os.path.join(Config.UPLOADS_DIR, archivo_nombre))
+                from app.helpers import guardar_soporte
+                guardar_soporte(archivo, archivo_nombre)
             except Exception as e:
                 print(f"[soporte] error guardando archivo: {e}")
                 archivo_nombre = None

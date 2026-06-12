@@ -7,10 +7,11 @@ from app.models.catalog import (
 )
 from app.models.notification_log import NotificationLog
 from app.models.soporte import SoporteTicket
+from app.models.archivo import ArchivoSoporte
 
 __all__ = [
     'Usuario', 'Imposibilidad', 'Carta',
     'ServiceConfig', 'EstadoTareaConfig', 'TipoImposibilidadConfig',
     'ClasificacionCarteraConfig', 'FirmaConfig', 'CodigoAnomaliaConfig',
-    'NotificationLog', 'SoporteTicket',
+    'NotificationLog', 'SoporteTicket', 'ArchivoSoporte',
 ]

@@ -1,6 +1,40 @@
 """Shared helper functions."""
+import os
 from flask import request
 from app.models.imposibilidad import Imposibilidad
+
+
+def guardar_soporte(file_storage, nombre):
+    """Persiste un archivo subido TANTO en la base de datos (BYTEA, sobrevive a los
+    deploys de Render) como en disco (best-effort, util en local). Devuelve el nombre.
+
+    'nombre' es el identificador unico con el que luego se sirve (se guarda en
+    Imposibilidad.archivo_nombre / SoporteTicket.archivo_evidencia)."""
+    from app.extensions import db
+    from app.models.archivo import ArchivoSoporte
+    from app.config import Config
+
+    data = file_storage.read()
+    content_type = getattr(file_storage, 'mimetype', None) or 'application/octet-stream'
+
+    # Guardar / actualizar en la DB (fuente de verdad persistente)
+    existing = ArchivoSoporte.query.filter_by(nombre=nombre).first()
+    if existing:
+        existing.data = data
+        existing.content_type = content_type
+    else:
+        db.session.add(ArchivoSoporte(nombre=nombre, data=data, content_type=content_type))
+    # El commit lo hace el caller junto con el resto de cambios de la tarea.
+
+    # Best-effort en disco (local dev / cache). No es critico si falla en Render.
+    try:
+        os.makedirs(Config.UPLOADS_DIR, exist_ok=True)
+        with open(os.path.join(Config.UPLOADS_DIR, nombre), 'wb') as f:
+            f.write(data)
+    except Exception as e:
+        print(f"[guardar_soporte] no se pudo escribir en disco {nombre}: {e}")
+
+    return nombre
 
 
 def aplicar_filtros_comunes(query):

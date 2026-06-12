@@ -678,4 +678,36 @@ def anulaciones_ejecutar():
 @admin_bp.route('/adjuntos/<path:filename>')
 @login_required
 def descargar_adjuntos(filename):
-    return send_from_directory(Config.UPLOADS_DIR, filename, as_attachment=True)
+    """Sirve un soporte/evidencia. Fuente de verdad: la tabla archivo_soporte en la
+    DB (persiste en Render). Si no esta en la DB, intenta el disco local (legacy).
+    Los PDF/imagenes se muestran EN LINEA (?dl=1 para forzar descarga)."""
+    from app.models.archivo import ArchivoSoporte
+    forzar_descarga = request.args.get('dl') == '1'
+    # tipos que el navegador puede mostrar en linea
+    inline_types = ('application/pdf', 'image/', 'text/')
+
+    registro = ArchivoSoporte.query.filter_by(nombre=filename).first()
+    if registro:
+        ctype = registro.content_type or 'application/octet-stream'
+        as_attach = forzar_descarga or not ctype.startswith(inline_types)
+        return send_file(
+            io.BytesIO(registro.data),
+            mimetype=ctype,
+            as_attachment=as_attach,
+            download_name=filename,
+        )
+
+    # Fallback a disco (archivos antiguos que aun existan localmente)
+    ruta = os.path.join(Config.UPLOADS_DIR, filename)
+    if os.path.exists(ruta):
+        import mimetypes
+        ctype = mimetypes.guess_type(filename)[0] or 'application/octet-stream'
+        as_attach = forzar_descarga or not ctype.startswith(inline_types)
+        return send_file(ruta, mimetype=ctype, as_attachment=as_attach, download_name=filename)
+
+    flash(
+        f"El soporte '{filename}' ya no esta disponible. Es posible que se haya "
+        f"cargado antes de habilitar el almacenamiento persistente; pide a la firma "
+        f"que lo vuelva a subir.", "warning"
+    )
+    return redirect(request.referrer or url_for('admin.dashboard'))

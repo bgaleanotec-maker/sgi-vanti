@@ -49,7 +49,7 @@ def create_app(config_class=None):
     with app.app_context():
         from app.models import (Usuario, Imposibilidad, Carta, ServiceConfig,
                                 EstadoTareaConfig, TipoImposibilidadConfig, NotificationLog,
-                                SoporteTicket)
+                                SoporteTicket, ArchivoSoporte)
         db.create_all()
         # Safe additive migrations BEFORE seeding (never drops anything)
         from app.safe_migrate import run_safe_migrations

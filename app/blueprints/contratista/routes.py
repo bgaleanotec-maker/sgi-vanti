@@ -7,7 +7,7 @@ from flask_login import login_required, current_user
 from app.extensions import db
 from app.models import Usuario, Imposibilidad
 from app.decorators import role_required
-from app.helpers import aplicar_filtros_comunes, guardar_datos_carta
+from app.helpers import aplicar_filtros_comunes, guardar_datos_carta, guardar_soporte
 from app.services.notification_service import notify_user, get_flash_message
 from app.config import Config
 from app.blueprints.contratista import contratista_bp
@@ -58,7 +58,7 @@ def gestionar_tarea(id):
     archivo = request.files.get('archivo')
     if archivo and archivo.filename != '':
         filename = f"{tarea.id}_{archivo.filename}"
-        archivo.save(os.path.join(Config.UPLOADS_DIR, filename))
+        guardar_soporte(archivo, filename)
         tarea.archivo_nombre = filename
 
     tarea.estado_tarea = 'soportes_cargados'

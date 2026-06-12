@@ -4,6 +4,46 @@ from flask import request
 from app.models.imposibilidad import Imposibilidad
 
 
+def backfill_soportes_desde_disco():
+    """Al arrancar, ingiere a la DB cualquier soporte que exista en disco
+    (UPLOADS_DIR, p.ej. el disco persistente de Render) y que aun no este guardado.
+    Asi disco y DB quedan sincronizados y nunca se pierde un archivo presente."""
+    import mimetypes
+    from app.extensions import db
+    from app.models.archivo import ArchivoSoporte
+    from app.config import Config
+
+    carpeta = Config.UPLOADS_DIR
+    if not os.path.isdir(carpeta):
+        return
+    try:
+        existentes = {n for (n,) in db.session.query(ArchivoSoporte.nombre).all()}
+    except Exception:
+        return
+    nuevos = 0
+    for nombre in os.listdir(carpeta):
+        ruta = os.path.join(carpeta, nombre)
+        if not os.path.isfile(ruta) or nombre in existentes:
+            continue
+        try:
+            with open(ruta, 'rb') as f:
+                data = f.read()
+            if not data:
+                continue
+            ct = mimetypes.guess_type(nombre)[0] or 'application/octet-stream'
+            db.session.add(ArchivoSoporte(nombre=nombre, data=data, content_type=ct))
+            nuevos += 1
+        except Exception as e:
+            print(f"[backfill_soportes] no se pudo ingerir {nombre}: {e}")
+    if nuevos:
+        try:
+            db.session.commit()
+            print(f"[backfill_soportes] {nuevos} soporte(s) de disco ingeridos a la DB")
+        except Exception as e:
+            db.session.rollback()
+            print(f"[backfill_soportes] error commit: {e}")
+
+
 def guardar_soporte(file_storage, nombre):
     """Persiste un archivo subido TANTO en la base de datos (BYTEA, sobrevive a los
     deploys de Render) como en disco (best-effort, util en local). Devuelve el nombre.

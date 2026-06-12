@@ -1,0 +1,73 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="space-y-6">
+    <div>
+        <h1 class="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-3">
+            <div class="h-10 w-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-lg">
+                <i class="bi bi-shield-check text-white"></i>
+            </div>
+            Respaldo de Soportes
+        </h1>
+        <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+            Los soportes se guardan de forma persistente en la base de datos. Aquí puedes
+            descargar un respaldo completo o restaurar archivos.
+        </p>
+    </div>
+
+    <!-- Stats -->
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm ring-1 ring-gray-200 dark:ring-gray-700 p-5">
+            <p class="text-xs uppercase tracking-wider text-gray-500">Soportes persistidos</p>
+            <p class="text-3xl font-bold text-gray-900 dark:text-white">{{ total }}</p>
+        </div>
+        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm ring-1 ring-gray-200 dark:ring-gray-700 p-5">
+            <p class="text-xs uppercase tracking-wider text-gray-500">Espacio usado</p>
+            <p class="text-3xl font-bold text-gray-900 dark:text-white">{{ total_mb }} <span class="text-base font-normal text-gray-400">MB</span></p>
+        </div>
+        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm ring-1 ring-gray-200 dark:ring-gray-700 p-5">
+            <p class="text-xs uppercase tracking-wider text-gray-500">Referencias sin archivo</p>
+            <p class="text-3xl font-bold {% if faltantes %}text-amber-600{% else %}text-gray-900 dark:text-white{% endif %}">{{ faltantes|length }}</p>
+        </div>
+    </div>
+
+    <!-- Backup -->
+    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm ring-1 ring-gray-200 dark:ring-gray-700 p-6">
+        <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-2"><i class="bi bi-download text-emerald-600 mr-1"></i> Descargar respaldo</h2>
+        <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">Descarga TODOS los soportes en un solo .zip. Guárdalo periódicamente como copia de seguridad externa.</p>
+        <a href="{{ url_for('admin.soportes_backup_zip') }}"
+           class="inline-flex items-center rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700">
+            <i class="bi bi-file-earmark-zip mr-2"></i> Descargar backup (.zip)
+        </a>
+    </div>
+
+    <!-- Restaurar -->
+    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm ring-1 ring-gray-200 dark:ring-gray-700 p-6">
+        <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-2"><i class="bi bi-upload text-brand-600 mr-1"></i> Restaurar soportes</h2>
+        <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">
+            Sube archivos sueltos o un .zip. Cada archivo se guarda con su <strong>nombre exacto</strong>
+            (debe coincidir con el del soporte original, ej. <span class="font-mono">514_Prov_ALBARAN Julio 2025.pdf</span>)
+            para que la tarea vuelva a mostrarlo.
+        </p>
+        <form method="POST" action="{{ url_for('admin.soportes_restaurar') }}" enctype="multipart/form-data" class="flex flex-wrap items-center gap-3">
+            <input type="file" name="archivos" multiple
+                   class="block text-sm text-gray-500 file:mr-3 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-brand-50 file:text-brand-700 hover:file:bg-brand-100 border border-gray-300 rounded-lg cursor-pointer bg-gray-50">
+            <button type="submit" class="inline-flex items-center rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-700">
+                <i class="bi bi-cloud-arrow-up mr-2"></i> Restaurar
+            </button>
+        </form>
+    </div>
+
+    <!-- Faltantes -->
+    {% if faltantes %}
+    <div class="bg-amber-50 dark:bg-amber-900/20 rounded-2xl ring-1 ring-amber-200 dark:ring-amber-800 p-6">
+        <h2 class="text-base font-semibold text-amber-800 dark:text-amber-300 mb-2">
+            <i class="bi bi-exclamation-triangle mr-1"></i> {{ faltantes|length }} tarea(s) referencian un soporte que ya no está
+        </h2>
+        <p class="text-sm text-amber-700 dark:text-amber-400 mb-3">Estos nombres se esperan; súbelos arriba para recuperarlos:</p>
+        <ul class="text-xs font-mono text-amber-800 dark:text-amber-300 space-y-1 max-h-60 overflow-y-auto">
+            {% for f in faltantes %}<li>{{ f }}</li>{% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

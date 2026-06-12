@@ -56,5 +56,11 @@ def create_app(config_class=None):
         run_safe_migrations()
         from app.seed import seed_defaults
         seed_defaults()
+        # Ingiere a la DB cualquier soporte presente en disco (disco persistente)
+        try:
+            from app.helpers import backfill_soportes_desde_disco
+            backfill_soportes_desde_disco()
+        except Exception as e:
+            print(f"[init] backfill soportes fallo: {e}")
 
     return app

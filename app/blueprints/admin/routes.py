@@ -675,6 +675,90 @@ def anulaciones_ejecutar():
     return redirect(url_for(destino))
 
 
+@admin_bp.route('/soportes')
+@login_required
+@role_required('admin')
+def soportes_backup():
+    """Panel de respaldo/restauracion de soportes. Muestra cuantos archivos hay
+    persistidos en la DB y permite descargar un backup .zip o restaurar archivos."""
+    from app.models.archivo import ArchivoSoporte
+    registros = ArchivoSoporte.query.with_entities(
+        ArchivoSoporte.nombre, db.func.length(ArchivoSoporte.data)
+    ).all()
+    total = len(registros)
+    total_bytes = sum((r[1] or 0) for r in registros)
+    # Referencias huerfanas: tareas/tickets que apuntan a un archivo que ya no esta
+    nombres_db = {r[0] for r in registros}
+    refs = [i.archivo_nombre for i in Imposibilidad.query.with_entities(
+        Imposibilidad.archivo_nombre).filter(Imposibilidad.archivo_nombre.isnot(None)).all() if i.archivo_nombre]
+    faltantes = sorted(set(refs) - nombres_db)
+    return render_template('admin_soportes.html',
+                           total=total, total_mb=round(total_bytes / 1024 / 1024, 2),
+                           faltantes=faltantes)
+
+
+@admin_bp.route('/soportes/backup')
+@login_required
+@role_required('admin')
+def soportes_backup_zip():
+    """Descarga TODOS los soportes persistidos como un .zip (respaldo completo)."""
+    import zipfile
+    from app.models.archivo import ArchivoSoporte
+    buffer = io.BytesIO()
+    with zipfile.ZipFile(buffer, 'w', zipfile.ZIP_DEFLATED) as zf:
+        for a in ArchivoSoporte.query.all():
+            zf.writestr(a.nombre, a.data)
+    buffer.seek(0)
+    return send_file(buffer, as_attachment=True,
+                     download_name=f"backup_soportes_{datetime.now():%Y%m%d_%H%M}.zip",
+                     mimetype='application/zip')
+
+
+@admin_bp.route('/soportes/restaurar', methods=['POST'])
+@login_required
+@role_required('admin')
+def soportes_restaurar():
+    """Restaura soportes: sube archivos sueltos o un .zip; cada archivo se guarda en
+    la DB con su nombre EXACTO (debe coincidir con el archivo_nombre de la tarea)."""
+    import zipfile
+    from app.models.archivo import ArchivoSoporte
+    import mimetypes
+
+    archivos = request.files.getlist('archivos')
+    if not archivos or all(a.filename == '' for a in archivos):
+        flash('No seleccionaste archivos.', 'warning')
+        return redirect(url_for('admin.soportes_backup'))
+
+    guardados = 0
+    def _store(nombre, data):
+        nonlocal guardados
+        if not nombre or not data:
+            return
+        ct = mimetypes.guess_type(nombre)[0] or 'application/octet-stream'
+        reg = ArchivoSoporte.query.filter_by(nombre=nombre).first()
+        if reg:
+            reg.data = data; reg.content_type = ct
+        else:
+            db.session.add(ArchivoSoporte(nombre=nombre, data=data, content_type=ct))
+        guardados += 1
+
+    for a in archivos:
+        if not a.filename:
+            continue
+        if a.filename.lower().endswith('.zip'):
+            with zipfile.ZipFile(a.stream) as zf:
+                for info in zf.infolist():
+                    if info.is_dir():
+                        continue
+                    _store(os.path.basename(info.filename), zf.read(info))
+        else:
+            _store(a.filename, a.read())
+
+    db.session.commit()
+    flash(f'{guardados} soporte(s) restaurado(s) y persistido(s) en la base de datos.', 'success')
+    return redirect(url_for('admin.soportes_backup'))
+
+
 @admin_bp.route('/adjuntos/<path:filename>')
 @login_required
 def descargar_adjuntos(filename):

@@ -22,7 +22,10 @@ class Config:
 
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
-    UPLOADS_DIR = os.path.join(BASE_DIR, 'uploads_soporte')
+    # Carpeta de soportes. En Render se apunta al DISCO PERSISTENTE via env
+    # (UPLOADS_DIR=/var/data/uploads_soporte) para que los archivos sobrevivan a los
+    # deploys. En local cae al directorio del proyecto.
+    UPLOADS_DIR = os.environ.get('UPLOADS_DIR', os.path.join(BASE_DIR, 'uploads_soporte'))
     KNOWLEDGE_DIR = os.path.join(BASE_DIR, 'knowledge_base')
     INSTRUCTIONS_FILE = os.path.join(BASE_DIR, 'gema_instructions.txt')
 

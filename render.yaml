@@ -4,7 +4,15 @@ services:
     env: docker
     dockerfilePath: ./Dockerfile
     healthCheckPath: /health
-    plan: free
+    # Plan de pago: requerido para disco persistente y para que el servicio
+    # no se suspenda por inactividad.
+    plan: starter
+    # Disco persistente: los soportes (PDF/imagenes) montados aqui NO se borran
+    # en los deploys/reinicios. La app escribe en UPLOADS_DIR (apunta a este disco).
+    disk:
+      name: soportes
+      mountPath: /var/data
+      sizeGB: 1
     envVars:
       - key: DATABASE_URL
         fromDatabase:
@@ -14,6 +22,8 @@ services:
         generateValue: true
       - key: FLASK_ENV
         value: production
+      - key: UPLOADS_DIR
+        value: /var/data/uploads_soporte
 
 databases:
   - name: sgi-db

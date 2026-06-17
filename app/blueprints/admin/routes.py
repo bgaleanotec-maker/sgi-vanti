@@ -86,19 +86,29 @@ def mapa_geografico():
     if bp_firma:
         query = query.filter(Imposibilidad.bp_firma.ilike(f'%{bp_firma}%'))
     tareas_filtradas = query.all()
+    import math
     locations = []
+    sin_coords = 0
     for tarea in tareas_filtradas:
         try:
             lat = float(str(tarea.latitud).replace(',', '.'))
             lon = float(str(tarea.longitud).replace(',', '.'))
+            # descarta NaN/infinito y coordenadas fuera de rango
+            if not (math.isfinite(lat) and math.isfinite(lon)):
+                raise ValueError
+            if not (-90 <= lat <= 90 and -180 <= lon <= 180) or (lat == 0 and lon == 0):
+                raise ValueError
             locations.append({
-                'lat': lat, 'lon': lon, 'orden': tarea.orden,
-                'direccion': tarea.direccion,
-                'estado': tarea.estado_tarea.replace('_', ' ').capitalize()
+                'lat': lat, 'lon': lon, 'orden': tarea.orden or '',
+                'direccion': tarea.direccion or '',
+                'estado': (tarea.estado_tarea or 'pendiente').replace('_', ' ').capitalize()
             })
         except (ValueError, TypeError):
+            sin_coords += 1
             continue
-    return render_template('mapa_geografico.html', locations=json.dumps(locations))
+    return render_template('mapa_geografico.html', locations=locations,
+                           total=len(tareas_filtradas), con_coords=len(locations),
+                           sin_coords=sin_coords)
 
 
 @admin_bp.route('/cargar_excel', methods=['GET', 'POST'])

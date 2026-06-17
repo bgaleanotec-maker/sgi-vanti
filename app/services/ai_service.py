@@ -67,7 +67,7 @@ def ask_gema(user_prompt, user_role='admin', username='usuario'):
     import google.generativeai as genai
 
     api_key = get_service_config('gemini', 'api_key')
-    model_name = get_service_config('gemini', 'model') or 'gemini-2.0-flash'
+    model_name = get_service_config('gemini', 'model') or 'gemini-flash-latest'
 
     if not api_key:
         return {"error": "La IA no está configurada. El admin debe configurar la API Key de Gemini en Integraciones."}
@@ -108,19 +108,6 @@ REGLAS:
         # Conversation history from session
         history = session.get('gema_history', [])
 
-        # Try to use the specified model
-        try:
-            model = genai.GenerativeModel(model_name)
-        except Exception:
-            # Fallback: auto-detect available model
-            model = None
-            for m in genai.list_models():
-                if 'generateContent' in m.supported_generation_methods:
-                    model = genai.GenerativeModel(m.name)
-                    break
-            if model is None:
-                return {"error": "No se encontraron modelos disponibles para esta API Key."}
-
         # Build conversation with history
         full_prompt = system_prompt + "\n\n"
         for h in history[-8:]:  # Last 8 messages
@@ -128,7 +115,29 @@ REGLAS:
             full_prompt += f"{role_label}: {h['content']}\n"
         full_prompt += f"Usuario: {user_prompt}\nAsistente:"
 
-        response = model.generate_content(full_prompt)
+        # Genera con el modelo configurado; si el nombre quedo obsoleto (404) o falla,
+        # reintenta con modelos vigentes y, en ultimo caso, autodetecta uno disponible.
+        candidatos = [model_name, 'gemini-flash-latest', 'gemini-2.5-flash']
+        response = None
+        ultimo_error = None
+        for nombre in candidatos:
+            try:
+                response = genai.GenerativeModel(nombre).generate_content(full_prompt)
+                break
+            except Exception as e:
+                ultimo_error = e
+                continue
+        if response is None:
+            # Autodeteccion: primer modelo flash que soporte generateContent
+            try:
+                for m in genai.list_models():
+                    if 'generateContent' in m.supported_generation_methods and 'flash' in m.name:
+                        response = genai.GenerativeModel(m.name).generate_content(full_prompt)
+                        break
+            except Exception as e:
+                ultimo_error = e
+        if response is None:
+            return {"error": f"No se pudo generar respuesta con la API Key/modelo. Detalle: {ultimo_error}"}
 
         if response and response.text:
             # Save to history

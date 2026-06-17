@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Proceso SGI Vanti &mdash; BPMN 2.0 | Gestion de Imposibilidades</title>
+    <title>Proceso SGI Vanti — BPMN 2.0 | Gestión de Imposibilidades y Rechazos</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
 
@@ -11,567 +11,320 @@
             --bg: #0a0e1a;
             --card: rgba(15,23,42,0.85);
             --glass: rgba(30,41,59,0.6);
-            --accent: #3b82f6;
-            --green: #10b981;
+            --accent: #6366f1;
+            --green: #22c55e;
+            --blue: #3b82f6;
             --yellow: #f59e0b;
             --red: #ef4444;
             --purple: #8b5cf6;
             --cyan: #06b6d4;
             --pink: #ec4899;
             --orange: #f97316;
+            --gray: #6b7280;
+            --slate: #94a3b8;
             --text: #f8fafc;
             --muted: #94a3b8;
             --border: rgba(255,255,255,0.08);
         }
-
         * { margin: 0; padding: 0; box-sizing: border-box; }
-
-        body {
-            font-family: 'Inter', sans-serif;
-            background: var(--bg);
-            color: var(--text);
-            overflow-x: hidden;
-        }
-
+        body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); overflow-x: hidden; }
         body::before {
-            content: '';
-            position: fixed;
-            inset: 0;
+            content: ''; position: fixed; inset: 0;
             background:
-                radial-gradient(ellipse at 20% 50%, rgba(59,130,246,0.08) 0%, transparent 50%),
-                radial-gradient(ellipse at 80% 20%, rgba(139,92,246,0.06) 0%, transparent 50%),
-                radial-gradient(ellipse at 50% 80%, rgba(16,185,129,0.05) 0%, transparent 50%);
-            z-index: 0;
-            animation: bgPulse 8s ease-in-out infinite alternate;
+                radial-gradient(ellipse at 20% 50%, rgba(99,102,241,0.10) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 20%, rgba(139,92,246,0.07) 0%, transparent 50%),
+                radial-gradient(ellipse at 50% 80%, rgba(34,197,94,0.05) 0%, transparent 50%);
+            z-index: 0; animation: bgPulse 8s ease-in-out infinite alternate;
         }
         @keyframes bgPulse { 0% { opacity: 0.7; } 100% { opacity: 1; } }
+        .container { position: relative; z-index: 1; max-width: 1500px; margin: 0 auto; padding: 40px 30px; }
 
-        .container { position: relative; z-index: 1; max-width: 1600px; margin: 0 auto; padding: 40px 30px; }
-
-        .back-link {
-            position: fixed;
-            top: 20px;
-            left: 20px;
-            z-index: 100;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            background: var(--glass);
-            backdrop-filter: blur(12px);
-            border: 1px solid var(--border);
-            color: var(--text);
-            text-decoration: none;
-            padding: 10px 18px;
-            border-radius: 999px;
-            font-size: 13px;
-            font-weight: 600;
-            transition: all 0.2s;
-        }
-        .back-link:hover { border-color: var(--accent); transform: translateX(-2px); }
+        /* TOP BAR */
+        .topbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+        .topbar a { color: var(--muted); font-size: 13px; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; padding: 8px 16px; border: 1px solid var(--border); border-radius: 999px; transition: all .3s; background: var(--glass); }
+        .topbar a:hover { color: var(--text); border-color: var(--accent); }
+        .topbar .logo { font-weight: 800; font-size: 15px; display: inline-flex; align-items: center; gap: 8px; }
+        .topbar .logo i { color: var(--accent); }
 
         /* HEADER */
-        .header { text-align: center; margin-bottom: 50px; animation: fadeUp 0.8s ease; }
-        .header .badge {
-            display: inline-block;
-            background: linear-gradient(135deg, var(--accent), var(--purple));
-            padding: 6px 20px;
-            border-radius: 999px;
-            font-size: 11px;
-            font-weight: 700;
-            letter-spacing: 2px;
-            text-transform: uppercase;
-            margin-bottom: 16px;
-        }
-        .header h1 {
-            font-size: 42px;
-            font-weight: 900;
-            background: linear-gradient(135deg, #fff 0%, var(--accent) 50%, var(--purple) 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            line-height: 1.1;
-            margin-bottom: 10px;
-        }
-        .header p { color: var(--muted); font-size: 16px; max-width: 800px; margin: 0 auto; }
+        .header { text-align: center; margin-bottom: 40px; animation: fadeUp 0.8s ease; }
+        .header .badge { display: inline-block; background: linear-gradient(135deg, var(--accent), var(--purple)); padding: 6px 20px; border-radius: 999px; font-size: 11px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 16px; }
+        .header h1 { font-size: 40px; font-weight: 900; background: linear-gradient(135deg, #fff 0%, var(--accent) 50%, var(--purple) 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; line-height: 1.1; margin-bottom: 10px; }
+        .header p { color: var(--muted); font-size: 16px; max-width: 760px; margin: 0 auto; }
 
         /* KPI BAR */
-        .kpi-bar {
-            display: grid;
-            grid-template-columns: repeat(5, 1fr);
-            gap: 16px;
-            margin-bottom: 40px;
-            animation: fadeUp 1s ease;
-        }
-        .kpi {
-            background: var(--glass);
-            backdrop-filter: blur(12px);
-            border: 1px solid var(--border);
-            border-radius: 16px;
-            padding: 20px;
-            text-align: center;
-            transition: all 0.3s;
-        }
-        .kpi:hover { border-color: var(--accent); transform: translateY(-4px); box-shadow: 0 8px 30px rgba(59,130,246,0.15); }
-        .kpi .number {
-            font-size: 32px;
-            font-weight: 800;
-            background: linear-gradient(135deg, var(--text), var(--accent));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
+        .kpi-bar { display: grid; grid-template-columns: repeat(5, 1fr); gap: 16px; margin-bottom: 40px; animation: fadeUp 1s ease; }
+        .kpi { background: var(--glass); backdrop-filter: blur(12px); border: 1px solid var(--border); border-radius: 16px; padding: 20px; text-align: center; transition: all 0.3s; }
+        .kpi:hover { border-color: var(--accent); transform: translateY(-4px); box-shadow: 0 8px 30px rgba(99,102,241,0.15); }
+        .kpi .number { font-size: 32px; font-weight: 800; background: linear-gradient(135deg, var(--text), var(--accent)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
         .kpi .label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-top: 4px; }
 
         /* PHASE BAR */
-        .phase-bar {
-            display: flex;
-            align-items: center;
-            gap: 0;
-            margin: 40px 0 20px;
-            background: var(--glass);
-            border-radius: 16px;
-            overflow: hidden;
-            border: 1px solid var(--border);
-            animation: fadeUp 1.4s ease;
-        }
-        .phase {
-            flex: 1;
-            padding: 16px 12px;
-            text-align: center;
-            font-size: 11px;
-            font-weight: 600;
-            position: relative;
-            cursor: pointer;
-            transition: all 0.3s;
-        }
+        .phase-bar { display: flex; align-items: center; gap: 0; margin: 0 0 30px; background: var(--glass); border-radius: 16px; overflow: hidden; border: 1px solid var(--border); animation: fadeUp 1.4s ease; }
+        .phase { flex: 1; padding: 16px 12px; text-align: center; font-size: 11px; font-weight: 600; position: relative; transition: all 0.3s; }
         .phase:hover { background: rgba(255,255,255,0.05); }
         .phase .phase-num { font-size: 20px; font-weight: 800; display: block; margin-bottom: 2px; }
-        .phase::after {
-            content: '';
-            position: absolute;
-            right: 0;
-            top: 20%;
-            height: 60%;
-            width: 1px;
-            background: var(--border);
-        }
+        .phase::after { content: ''; position: absolute; right: 0; top: 20%; height: 60%; width: 1px; background: var(--border); }
         .phase:last-child::after { display: none; }
 
-        /* SWIMLANE DIAGRAM */
-        .bpmn-container { position: relative; animation: fadeUp 1.2s ease; }
+        /* STATE LEGEND */
+        .state-legend { display:flex; justify-content:center; gap:10px; flex-wrap:wrap; margin-bottom: 34px; animation: fadeUp 1.2s ease; }
+        .state-pill { display:inline-flex; align-items:center; gap:7px; font-size:11px; color:var(--text); background: var(--glass); border:1px solid var(--border); padding:6px 14px; border-radius:999px; }
+        .state-dot { width:10px; height:10px; border-radius:50%; }
 
-        .swimlane {
-            display: grid;
-            grid-template-columns: 180px 1fr;
-            min-height: 170px;
-            border: 1px solid var(--border);
-            border-bottom: none;
-            position: relative;
-        }
+        /* SWIMLANES */
+        .bpmn-container { animation: fadeUp 1.2s ease; }
+        .swimlane { display: grid; grid-template-columns: 170px 1fr; min-height: 170px; border: 1px solid var(--border); border-bottom: none; position: relative; }
         .swimlane:last-child { border-bottom: 1px solid var(--border); }
-        .swimlane:first-child { border-radius: 12px 12px 0 0; }
-        .swimlane:last-child { border-radius: 0 0 12px 12px; }
+        .lane-label { background: var(--glass); backdrop-filter: blur(12px); border-right: 1px solid var(--border); display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 16px; gap: 8px; }
+        .lane-label .icon { width: 46px; height: 46px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 20px; }
+        .lane-label .name { font-weight: 700; font-size: 13px; text-align:center; }
+        .lane-label .sub { font-size: 10px; color: var(--muted); text-align: center; }
+        .lane-content { padding: 22px 16px; display: flex; align-items: center; gap: 8px; overflow-x: auto; position: relative; }
 
-        .lane-label {
-            background: var(--glass);
-            backdrop-filter: blur(12px);
-            border-right: 1px solid var(--border);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            padding: 16px;
-            gap: 8px;
-        }
-        .lane-label .icon {
-            width: 44px;
-            height: 44px;
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 20px;
-        }
-        .lane-label .name { font-weight: 700; font-size: 13px; text-align: center; }
-        .lane-label .sub { font-size: 10px; color: var(--muted); text-align: center; line-height: 1.4; }
-
-        .lane-content {
-            padding: 20px 16px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            overflow-x: auto;
-            position: relative;
-        }
-
-        /* BPMN SHAPES */
-        .bpmn-start, .bpmn-end {
-            width: 36px;
-            height: 36px;
-            border-radius: 50%;
-            flex-shrink: 0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 14px;
-        }
+        /* SHAPES */
+        .bpmn-start, .bpmn-end { width: 38px; height: 38px; border-radius: 50%; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 14px; position: relative; }
         .bpmn-start { border: 3px solid var(--green); color: var(--green); }
         .bpmn-end { border: 4px solid var(--red); color: var(--red); }
+        .bpmn-end.ok { border-color: var(--green); color: var(--green); }
+        .bpmn-end.anul { border-color: var(--gray); color: var(--gray); }
+        .end-label { position:absolute; top: 42px; left:50%; transform:translateX(-50%); font-size:9px; font-weight:700; white-space:nowrap; color: var(--muted); }
 
-        .bpmn-task {
-            min-width: 130px;
-            max-width: 170px;
-            padding: 10px 12px;
-            border-radius: 10px;
-            font-size: 10px;
-            line-height: 1.3;
-            flex-shrink: 0;
-            cursor: pointer;
-            transition: all 0.3s;
-            position: relative;
-            border: 1.5px solid;
-        }
-        .bpmn-task:hover {
-            transform: translateY(-4px) scale(1.03);
-            box-shadow: 0 8px 25px rgba(0,0,0,0.4);
-            z-index: 10;
-        }
+        .bpmn-task { min-width: 134px; max-width: 168px; padding: 10px 12px; border-radius: 10px; font-size: 10px; line-height: 1.3; flex-shrink: 0; cursor: pointer; transition: all 0.3s; position: relative; border: 1.5px solid; }
+        .bpmn-task:hover { transform: translateY(-4px) scale(1.03); box-shadow: 0 8px 25px rgba(0,0,0,0.4); z-index: 10; }
         .bpmn-task .task-code { font-weight: 800; font-size: 9px; letter-spacing: 1px; opacity: 0.7; margin-bottom: 3px; }
         .bpmn-task .task-name { font-weight: 600; font-size: 10.5px; }
-        .bpmn-task .task-ans {
-            margin-top: 5px;
-            font-size: 9px;
-            font-weight: 700;
-            padding: 2px 8px;
-            border-radius: 6px;
-            display: inline-block;
-        }
+        .bpmn-task .task-ans { margin-top: 5px; font-size: 9px; font-weight: 700; padding: 2px 8px; border-radius: 6px; display: inline-block; }
 
-        .task-field { background: rgba(16,185,129,0.1); border-color: rgba(16,185,129,0.3); }
+        .task-field { background: rgba(34,197,94,0.1); border-color: rgba(34,197,94,0.3); }
         .task-field:hover { border-color: var(--green); }
-        .task-field .task-ans { background: rgba(16,185,129,0.2); color: var(--green); }
-
+        .task-field .task-ans { background: rgba(34,197,94,0.2); color: var(--green); }
         .task-request { background: rgba(59,130,246,0.1); border-color: rgba(59,130,246,0.3); }
-        .task-request:hover { border-color: var(--accent); }
-        .task-request .task-ans { background: rgba(59,130,246,0.2); color: var(--accent); }
-
+        .task-request:hover { border-color: var(--blue); }
+        .task-request .task-ans { background: rgba(59,130,246,0.2); color: var(--blue); }
         .task-approval { background: rgba(245,158,11,0.1); border-color: rgba(245,158,11,0.3); }
         .task-approval:hover { border-color: var(--yellow); }
         .task-approval .task-ans { background: rgba(245,158,11,0.2); color: var(--yellow); }
-
         .task-exec { background: rgba(139,92,246,0.1); border-color: rgba(139,92,246,0.3); }
         .task-exec:hover { border-color: var(--purple); }
         .task-exec .task-ans { background: rgba(139,92,246,0.2); color: var(--purple); }
-
         .task-finance { background: rgba(236,72,153,0.1); border-color: rgba(236,72,153,0.3); }
         .task-finance:hover { border-color: var(--pink); }
         .task-finance .task-ans { background: rgba(236,72,153,0.2); color: var(--pink); }
 
-        .bpmn-gateway {
-            width: 34px;
-            height: 34px;
-            border: 2px solid var(--yellow);
-            background: rgba(245,158,11,0.1);
-            transform: rotate(45deg);
-            flex-shrink: 0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            transition: all 0.3s;
-        }
+        .bpmn-gateway { width: 36px; height: 36px; border: 2px solid var(--yellow); background: rgba(245,158,11,0.1); transform: rotate(45deg); flex-shrink: 0; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.3s; }
         .bpmn-gateway:hover { background: rgba(245,158,11,0.3); transform: rotate(45deg) scale(1.15); }
         .bpmn-gateway span { transform: rotate(-45deg); font-size: 12px; }
 
-        .arrow {
-            width: 22px;
-            height: 2px;
-            background: var(--muted);
-            flex-shrink: 0;
-            position: relative;
-        }
-        .arrow::after {
-            content: '';
-            position: absolute;
-            right: -1px;
-            top: -4px;
-            border: 5px solid transparent;
-            border-left: 6px solid var(--muted);
-        }
+        .arrow { width: 24px; height: 2px; background: var(--muted); flex-shrink: 0; position: relative; }
+        .arrow::after { content: ''; position: absolute; right: -1px; top: -4px; border: 5px solid transparent; border-left: 6px solid var(--muted); }
+        .arrow.loop { background: var(--orange); }
+        .arrow.loop::after { border-left-color: var(--orange); }
+        .branch { font-size: 9px; font-weight: 700; color: var(--muted); flex-shrink:0; padding: 0 2px; }
 
         /* TOOLTIP */
-        .tooltip {
-            display: none;
-            position: fixed;
-            background: rgba(15,23,42,0.95);
-            backdrop-filter: blur(16px);
-            border: 1px solid var(--accent);
-            border-radius: 12px;
-            padding: 14px 18px;
-            max-width: 320px;
-            z-index: 1000;
-            box-shadow: 0 8px 30px rgba(0,0,0,0.5);
-        }
+        .tooltip { display: none; position: fixed; background: rgba(15,23,42,0.96); backdrop-filter: blur(16px); border: 1px solid var(--accent); border-radius: 12px; padding: 14px 18px; max-width: 320px; z-index: 1000; box-shadow: 0 8px 30px rgba(0,0,0,0.5); }
         .tooltip.show { display: block; animation: tooltipIn 0.2s ease; }
         .tooltip h4 { color: var(--accent); font-size: 12px; font-weight: 700; margin-bottom: 6px; }
         .tooltip p { color: var(--muted); font-size: 11px; line-height: 1.5; }
         .tooltip .ans-info { color: var(--yellow); font-weight: 700; font-size: 11px; margin-top: 6px; }
 
-        /* STATES STRIP */
-        .states-strip {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-            gap: 10px;
-            margin: 40px 0;
-            animation: fadeUp 1.6s ease;
-        }
-        .state-card {
-            padding: 14px;
-            border-radius: 12px;
-            border: 1.5px solid;
-            text-align: center;
-            background: var(--glass);
-            backdrop-filter: blur(12px);
-        }
-        .state-card .state-name { font-weight: 700; font-size: 13px; }
-        .state-card .state-desc { font-size: 10px; color: var(--muted); margin-top: 4px; }
+        /* FEATURES STRIP */
+        .features { display:grid; grid-template-columns: repeat(3,1fr); gap:14px; margin-top: 40px; animation: fadeUp 1.4s ease; }
+        .feature { background: var(--glass); border:1px solid var(--border); border-radius:14px; padding:16px; display:flex; gap:12px; align-items:flex-start; }
+        .feature i { font-size:18px; margin-top:2px; }
+        .feature .ft { font-weight:700; font-size:12.5px; margin-bottom:3px; }
+        .feature .fd { font-size:11px; color:var(--muted); line-height:1.5; }
 
         /* FOOTER */
-        .footer {
-            text-align: center;
-            margin-top: 50px;
-            padding: 30px;
-            border-top: 1px solid var(--border);
-            animation: fadeUp 1.6s ease;
-        }
+        .footer { text-align: center; margin-top: 40px; padding: 30px; border-top: 1px solid var(--border); animation: fadeUp 1.6s ease; }
         .footer p { color: var(--muted); font-size: 11px; }
         .footer .brand { font-weight: 800; font-size: 14px; color: var(--text); margin-bottom: 4px; }
 
-        @keyframes fadeUp {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        @keyframes tooltipIn {
-            from { opacity: 0; transform: scale(0.95); }
-            to { opacity: 1; transform: scale(1); }
-        }
+        @keyframes fadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes tooltipIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
 
         @media print {
             body { background: white; color: #1e293b; }
             body::before { display: none; }
-            .back-link { display: none; }
+            .topbar, .features { display:none; }
             .kpi, .swimlane, .lane-label, .bpmn-task, .phase-bar { border-color: #cbd5e1 !important; }
             .bpmn-task { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
             .header h1 { -webkit-text-fill-color: #1e293b; }
         }
-
         @media (max-width: 768px) {
             .kpi-bar { grid-template-columns: repeat(2, 1fr); }
-            .header h1 { font-size: 28px; }
+            .features { grid-template-columns: 1fr; }
+            .header h1 { font-size: 26px; }
             .container { padding: 20px 16px; }
-            .swimlane { grid-template-columns: 120px 1fr; }
         }
-
-        .section-title {
-            font-size: 20px;
-            font-weight: 800;
-            margin: 50px 0 16px;
-            color: var(--text);
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        .section-title i { color: var(--accent); }
-        .section-sub { color: var(--muted); font-size: 13px; margin-bottom: 20px; }
     </style>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
-
-<a href="{{ url_for('auth.login') }}" class="back-link">
-    <i class="fas fa-arrow-left"></i> Volver al Login
-</a>
-
 <div class="container">
+
+    <!-- TOP BAR -->
+    <div class="topbar">
+        <span class="logo"><i class="fas fa-bolt"></i> SGI Vanti</span>
+        <a href="{{ url_for('auth.login') }}"><i class="fas fa-arrow-left"></i> Volver al inicio de sesión</a>
+    </div>
 
     <!-- HEADER -->
     <div class="header">
-        <div class="badge">BPMN 2.0 &mdash; Documentacion del Proceso</div>
-        <h1>Sistema de Gestion Integral<br>de Imposibilidades &mdash; Vanti</h1>
-        <p>Flujo completo desde la carga de imposibilidades desde Power BI hasta el envio de cartas al cliente, con notificaciones automaticas WhatsApp/Email y seguimiento de estados detallados.</p>
+        <div class="badge">BPMN 2.0 &mdash; Proceso Operativo</div>
+        <h1>Gestión de Imposibilidades<br>y Rechazos &mdash; SGI Vanti</h1>
+        <p>Flujo integral de extremo a extremo: desde la carga masiva de negocios hasta el cierre, con carriles por rol, estados controlados, contadores de días en cartera y notificaciones automáticas a las firmas.</p>
     </div>
 
     <!-- KPIs -->
     <div class="kpi-bar">
-        <div class="kpi">
-            <div class="number">18</div>
-            <div class="label">Actividades</div>
-        </div>
-        <div class="kpi">
-            <div class="number" style="-webkit-text-fill-color: #10b981">5</div>
-            <div class="label">Roles Operativos</div>
-        </div>
-        <div class="kpi">
-            <div class="number" style="-webkit-text-fill-color: #f59e0b">9</div>
-            <div class="label">Estados de Tarea</div>
-        </div>
-        <div class="kpi">
-            <div class="number" style="-webkit-text-fill-color: #8b5cf6">172</div>
-            <div class="label">Codigos PowerBI</div>
-        </div>
-        <div class="kpi">
-            <div class="number" style="-webkit-text-fill-color: #06b6d4">2</div>
-            <div class="label">Canales Notif.</div>
-        </div>
+        <div class="kpi"><div class="number">5</div><div class="label">Roles Operativos</div></div>
+        <div class="kpi"><div class="number" style="-webkit-text-fill-color:#22c55e">6</div><div class="label">Estados de Negocio</div></div>
+        <div class="kpi"><div class="number" style="-webkit-text-fill-color:#3b82f6">19</div><div class="label">Actividades</div></div>
+        <div class="kpi"><div class="number" style="-webkit-text-fill-color:#f59e0b">6d</div><div class="label">ANS Carta (hábiles)</div></div>
+        <div class="kpi"><div class="number" style="-webkit-text-fill-color:#8b5cf6">310</div><div class="label">Códigos de Anomalía</div></div>
     </div>
 
     <!-- PHASE BAR -->
     <div class="phase-bar">
-        <div class="phase" style="color: var(--cyan)">
-            <span class="phase-num">I</span> Carga &amp; Asignacion
-        </div>
-        <div class="phase" style="color: var(--accent)">
-            <span class="phase-num">II</span> Notificacion
-        </div>
-        <div class="phase" style="color: var(--green)">
-            <span class="phase-num">III</span> Gestion en Campo
-        </div>
-        <div class="phase" style="color: var(--yellow)">
-            <span class="phase-num">IV</span> Validacion
-        </div>
-        <div class="phase" style="color: var(--purple)">
-            <span class="phase-num">V</span> Emision Carta
-        </div>
-        <div class="phase" style="color: var(--pink)">
-            <span class="phase-num">VI</span> Cierre
-        </div>
+        <div class="phase" style="color: var(--accent)"><span class="phase-num">I</span> Carga &amp; Asignación</div>
+        <div class="phase" style="color: var(--green)"><span class="phase-num">II</span> Carga de Soportes</div>
+        <div class="phase" style="color: var(--blue)"><span class="phase-num">III</span> Validación</div>
+        <div class="phase" style="color: var(--pink)"><span class="phase-num">IV</span> Decisión &amp; Cierre</div>
+        <div class="phase" style="color: var(--orange)"><span class="phase-num">V</span> Soporte &amp; Control</div>
     </div>
 
-    <!-- BPMN SWIMLANE DIAGRAM -->
+    <!-- STATE LEGEND -->
+    <div class="state-legend">
+        <span class="state-pill"><span class="state-dot" style="background:#94a3b8"></span> Pendiente</span>
+        <span class="state-pill"><span class="state-dot" style="background:#3b82f6"></span> Soportes cargados</span>
+        <span class="state-pill"><span class="state-dot" style="background:#f59e0b"></span> Caso escalado</span>
+        <span class="state-pill"><span class="state-dot" style="background:#ef4444"></span> Rechazado</span>
+        <span class="state-pill"><span class="state-dot" style="background:#22c55e"></span> Finalizado</span>
+        <span class="state-pill"><span class="state-dot" style="background:#6b7280"></span> Anulado</span>
+    </div>
+
+    <!-- SWIMLANES -->
     <div class="bpmn-container">
 
-        <!-- LANE 1: ADMIN -->
+        <!-- LANE 1: ADMIN / BACKOFFICE -->
         <div class="swimlane">
             <div class="lane-label">
                 <div class="icon" style="background: rgba(139,92,246,0.15); color: var(--purple)"><i class="fas fa-user-shield"></i></div>
-                <div class="name">Admin</div>
-                <div class="sub">Carga masiva<br>Gestion de usuarios<br>Recordatorios</div>
+                <div class="name">Admin / BackOffice</div>
+                <div class="sub">Carga, control<br>y anulaciones</div>
             </div>
             <div class="lane-content">
-                <div class="bpmn-start"><i class="fas fa-play"></i></div>
+                <div class="bpmn-start"><i class="fas fa-play"></i><span class="end-label">Inicio</span></div>
                 <div class="arrow"></div>
 
-                <div class="bpmn-task task-request" data-tip="Descarga de PowerBI las anomalias (172 tipos). El Excel incluye columnas BP_Firma, Tipo_Asignacion (firma/contratista), Filial, Codigo_Imposibilidad, Gestor, Ejecutivo y Tarea. Los duplicados por Orden se omiten automaticamente.">
+                <div class="bpmn-task task-request" data-tip="Carga masiva por Excel: Orden, BP_Firma, Filial (Cundinamarca/Vanti/Ambas), Codigo_Anomalia (motivo), Clasificacion (ZACO=imposibilidades / INSO=rechazos), Gestor y Ejecutivo. Los duplicados por Orden se omiten.">
                     <div class="task-code">ADM-A</div>
-                    <div class="task-name">Cargar Excel Imposibilidades</div>
-                    <div class="task-ans">Desde Power BI</div>
+                    <div class="task-name">Cargar negocios (Excel)</div>
                 </div>
                 <div class="arrow"></div>
 
-                <div class="bpmn-task task-exec" data-tip="El sistema filtra las ordenes por BP_Firma y asigna al Gestor y Ejecutivo. Se crean usuarios automaticamente si no existen. El tipo_firma distingue firma duena vs contratista subcontratado.">
+                <div class="bpmn-task task-exec" data-tip="El sistema crea las tareas en estado 'pendiente' y arranca el contador de DIAS EN CARTERA por cada negocio para control del BackOffice externo.">
                     <div class="task-code">ADM-B</div>
-                    <div class="task-name">Asignacion Automatica</div>
-                    <div class="task-ans">BP + Gestor + Ejecutivo</div>
+                    <div class="task-name">Crear tareas → Pendiente</div>
+                    <div class="task-ans">Días en cartera ON</div>
                 </div>
                 <div class="arrow"></div>
 
-                <div class="bpmn-task task-exec" data-tip="Carga masiva de usuarios via Excel. El sistema envia credenciales temporales por WhatsApp + Email. El admin define tipo_firma (firma/contratista) y BP_Firma que filtra la cartera visible.">
+                <div class="bpmn-task task-request" data-tip="Notificacion automatica a la firma/contratista por Email (SendGrid) y WhatsApp (UltraMsg), agrupada por BP. Resumen de ordenes nuevas asignadas.">
                     <div class="task-code">ADM-C</div>
-                    <div class="task-name">Crear Usuarios (Masivo)</div>
-                    <div class="task-ans">WhatsApp + Email</div>
+                    <div class="task-name">Notificar firma (Email + WhatsApp)</div>
+                    <div class="task-ans">Agrupado por BP</div>
                 </div>
                 <div class="arrow"></div>
 
-                <div class="bpmn-task task-approval" data-tip="Vista previa agrupada por BP con total de pendientes y breakdown por tipo_imposibilidad. Requiere confirmacion escribiendo 'SI'. El mensaje NO lista cada tarea (evita saturar WhatsApp), solo envia total + top 8 tipos.">
+                <div class="bpmn-task task-approval" data-tip="Panel de gestion y subsanacion: el admin puede modificar comentarios, reactivar, devolver para ajustes, marcar no valida, cerrar o cambiar el estado manualmente. Toda accion notifica a la firma.">
                     <div class="task-code">ADM-D</div>
-                    <div class="task-name">Recordatorio WhatsApp</div>
-                    <div class="task-ans">Con Confirmacion</div>
+                    <div class="task-name">Panel de subsanación</div>
                 </div>
+                <div class="arrow"></div>
+
+                <div class="bpmn-gateway" title="¿Anular negocio?"><span>?</span></div>
+                <div class="arrow"></div>
+
+                <div class="bpmn-task task-exec" data-tip="Anulacion desde la Vista Maestra: selecciona uno, varios, toda la pagina o TODOS los que coinciden con el filtro. Confirma con motivo y, opcionalmente, envia comunicacion masiva de anulacion a las firmas. No borra: deja estado 'anulado'.">
+                    <div class="task-code">ADM-E</div>
+                    <div class="task-name">Anulación (individual / masiva)</div>
+                    <div class="task-ans">Por filtro</div>
+                </div>
+                <div class="arrow"></div>
+                <div class="bpmn-end anul"><i class="fas fa-ban"></i><span class="end-label">Anulado</span></div>
             </div>
         </div>
 
         <!-- LANE 2: FIRMA / CONTRATISTA -->
         <div class="swimlane">
             <div class="lane-label">
-                <div class="icon" style="background: rgba(16,185,129,0.15); color: var(--green)"><i class="fas fa-hard-hat"></i></div>
+                <div class="icon" style="background: rgba(34,197,94,0.15); color: var(--green)"><i class="fas fa-helmet-safety"></i></div>
                 <div class="name">Firma / Contratista</div>
-                <div class="sub">Cartera filtrada<br>por BP_Firma<br>Tipo: firma o contratista</div>
+                <div class="sub">Ejecuta y<br>carga soportes</div>
             </div>
             <div class="lane-content">
-                <div class="bpmn-task task-request" data-tip="Recibe WhatsApp y Email con resumen de tareas asignadas. El mensaje incluye orden, direccion y tipo. Respeta preferencias notify_email/notify_whatsapp.">
+                <div class="bpmn-task task-request" data-tip="La firma recibe el aviso por Email/WhatsApp de que tiene nuevos negocios asignados a su BP.">
                     <div class="task-code">FIR-A</div>
-                    <div class="task-name">Recibir Notificacion</div>
-                    <div class="task-ans">Multi-canal</div>
+                    <div class="task-name">Recibe notificación</div>
                 </div>
                 <div class="arrow"></div>
 
-                <div class="bpmn-task task-field" data-tip="Ve su cartera filtrada por su BP_Firma. Visualiza Filial (filial duena del negocio), codigo Power BI, tipo de imposibilidad, estado detallado y direccion. Puede descargar toda su cartera en XLSX.">
+                <div class="bpmn-task task-field" data-tip="Abre 'Mi Cartera': ve el MOTIVO del rechazo/imposibilidad (descripcion del codigo de anomalia), la clasificacion ZACO/INSO, la filial y los DIAS EN CARTERA de cada negocio.">
                     <div class="task-code">FIR-B</div>
-                    <div class="task-name">Ver Mi Cartera</div>
-                    <div class="task-ans">Ver Filial</div>
+                    <div class="task-name">Revisa su cartera</div>
+                    <div class="task-ans">Motivo + ZACO/INSO</div>
                 </div>
                 <div class="arrow"></div>
 
-                <div class="bpmn-task task-field" data-tip="Descarga XLSX con toda la cartera del BP incluyendo filial, codigo, tipo, estado, gestor/ejecutivo asignado, fechas y comentarios. Ideal para reporting interno de la firma.">
+                <div class="bpmn-task task-field" data-tip="Sube los soportes (PDF / imagenes) que evidencian la gestion. Se guardan de forma PERSISTENTE en la base de datos (no se pierden en los despliegues).">
                     <div class="task-code">FIR-C</div>
-                    <div class="task-name">Descargar Cartera</div>
-                    <div class="task-ans">XLSX Completo</div>
+                    <div class="task-name">Carga soportes (PDF / imágenes)</div>
+                    <div class="task-ans">Almacenamiento persistente</div>
                 </div>
                 <div class="arrow"></div>
 
-                <div class="bpmn-task task-field" data-tip="Realiza visita al predio, valida las condiciones tecnicas de la imposibilidad, toma registros fotograficos y documentacion de soporte. Si la solicitud esta incompleta, puede ser devuelta para ajustes.">
+                <div class="bpmn-task task-request" data-tip="Al cargar, el negocio pasa a estado 'soportes_cargados' y se notifica automaticamente al Gestor para su validacion.">
                     <div class="task-code">FIR-D</div>
-                    <div class="task-name">Visita Terreno</div>
+                    <div class="task-name">→ Soportes cargados, notifica Gestor</div>
                 </div>
-                <div class="arrow"></div>
-
-                <div class="bpmn-task task-field" data-tip="Sube evidencia fotografica + comentario al sistema. Para tareas tipo 'carta', diligencia formulario con datos del cliente (cedula, distancia acometida, direccion, coordenadas). El estado pasa a 'Gestionado' o 'Carta Pendiente'.">
-                    <div class="task-code">FIR-E</div>
-                    <div class="task-name">Gestionar Tarea</div>
-                    <div class="task-ans">Upload + Comentario</div>
-                </div>
-                <div class="arrow"></div>
-
-                <div class="bpmn-task task-exec" data-tip="El usuario puede auto-gestionar su perfil: email, celular, preferencias de notificacion (email/WhatsApp), cambiar contrasena. El admin solo configura BP_Firma y tipo_firma.">
-                    <div class="task-code">FIR-F</div>
-                    <div class="task-name">Auto-gestion Perfil</div>
-                </div>
+                <div class="arrow loop"></div>
+                <span class="branch" style="color:var(--orange)">↑ corrige si lo devuelven</span>
             </div>
         </div>
 
         <!-- LANE 3: GESTOR -->
         <div class="swimlane">
             <div class="lane-label">
-                <div class="icon" style="background: rgba(245,158,11,0.15); color: var(--yellow)"><i class="fas fa-user-check"></i></div>
+                <div class="icon" style="background: rgba(59,130,246,0.15); color: var(--blue)"><i class="fas fa-clipboard-check"></i></div>
                 <div class="name">Gestor</div>
-                <div class="sub">Valida gestion<br>Aprueba / Devuelve<br>Cierra tareas estandar</div>
+                <div class="sub">Valida la<br>gestión</div>
             </div>
             <div class="lane-content">
-                <div class="bpmn-task task-request" data-tip="Recibe WhatsApp/Email cada vez que una firma gestiona una orden de su cartera. Ve la imposibilidad con comentarios y evidencia subida.">
+                <div class="bpmn-task task-approval" data-tip="El gestor revisa los soportes cargados por la firma y verifica que la gestion sea correcta y completa.">
                     <div class="task-code">GES-A</div>
-                    <div class="task-name">Notificacion Gestion</div>
-                    <div class="task-ans">WhatsApp + Email</div>
+                    <div class="task-name">Revisa soportes</div>
                 </div>
                 <div class="arrow"></div>
 
-                <div class="bpmn-task task-approval" data-tip="Verifica que la evidencia sea suficiente y los datos correctos. Revisa fotos, dimensiones, descripcion del tipo de imposibilidad y codigo PowerBI.">
+                <div class="bpmn-gateway" title="¿Soportes válidos?"><span>?</span></div>
+                <div class="arrow"></div>
+                <span class="branch" style="color:var(--green)">SÍ →</span>
+
+                <div class="bpmn-task task-approval" data-tip="Si los soportes son validos, el gestor FINALIZA el negocio. Estado final 'finalizado'.">
                     <div class="task-code">GES-B</div>
-                    <div class="task-name">Revisar Evidencia</div>
+                    <div class="task-name">Finaliza la gestión</div>
                 </div>
                 <div class="arrow"></div>
+                <div class="bpmn-end ok"><i class="fas fa-flag-checkered"></i><span class="end-label">Finalizado</span></div>
 
-                <div class="bpmn-gateway" title="Aprobacion / Devolucion"><span>?</span></div>
-                <div class="arrow"></div>
-
-                <div class="bpmn-task task-approval" data-tip="Si falta informacion: devuelve con comentario, estado pasa a 'Devuelta para ajustes' o 'Rechazada'. La firma recibe notificacion con el motivo. Si es solicitud incompleta, aplica la plantilla oficial pidiendo registros fotograficos o cartas de subsanacion.">
+                <span class="branch" style="color:var(--orange); margin-left:14px">NO ↓</span>
+                <div class="bpmn-task task-approval" data-tip="Si los soportes son insuficientes, devuelve el caso a 'pendiente' para que la firma corrija y vuelva a cargar. Se notifica a la firma.">
                     <div class="task-code">GES-C</div>
-                    <div class="task-name">Devolver / Rechazar</div>
-                    <div class="task-ans">Ciclo Subsanacion</div>
-                </div>
-                <div class="arrow"></div>
-
-                <div class="bpmn-task task-approval" data-tip="Si aprueba: registra comentario de gestor y cambia estado a 'Validada' o 'Cerrada'. Para tareas estandar (no carta), finaliza el ciclo aqui.">
-                    <div class="task-code">GES-D</div>
-                    <div class="task-name">Validar y Cerrar</div>
-                    <div class="task-ans">Estado Final</div>
+                    <div class="task-name">Devuelve → Pendiente</div>
+                    <div class="task-ans">Loop a la firma</div>
                 </div>
             </div>
         </div>
@@ -581,188 +334,100 @@
             <div class="lane-label">
                 <div class="icon" style="background: rgba(236,72,153,0.15); color: var(--pink)"><i class="fas fa-briefcase"></i></div>
                 <div class="name">Ejecutivo</div>
-                <div class="sub">Tareas tipo 'carta'<br>Revisa y envia<br>Documento al cliente</div>
+                <div class="sub">Decisión y<br>cierre comercial</div>
             </div>
             <div class="lane-content">
-                <div class="bpmn-task task-request" data-tip="Recibe notificacion cuando la firma diligencia los datos de carta. Estado actual: 'Carta Pendiente Revision'.">
+                <div class="bpmn-task task-exec" data-tip="El ejecutivo tiene visibilidad COMPLETA de la cartera de sus firmas/contratistas: estados, dias en cartera, clasificacion y resumen por BP.">
                     <div class="task-code">EJE-A</div>
-                    <div class="task-name">Notificacion Carta</div>
-                    <div class="task-ans">Estado: Pendiente</div>
+                    <div class="task-name">Visibilidad de cartera</div>
                 </div>
                 <div class="arrow"></div>
 
-                <div class="bpmn-task task-approval" data-tip="Revisa los datos diligenciados por la firma: cliente, cedula, distancia acometida, direccion del predio, observaciones tecnicas. Valida coherencia con el tipo de imposibilidad.">
+                <div class="bpmn-task task-exec" data-tip="Cuando la firma carga los soportes, el ejecutivo puede CAMBIAR EL ESTADO directamente: rechazado, caso escalado, anulado o finalizado. Toda accion notifica a la firma.">
                     <div class="task-code">EJE-B</div>
-                    <div class="task-name">Revisar Datos Carta</div>
+                    <div class="task-name">Cambia estado del negocio</div>
+                    <div class="task-ans">Rechaza / escala / anula</div>
                 </div>
                 <div class="arrow"></div>
 
-                <div class="bpmn-task task-exec" data-tip="Sistema genera automaticamente la carta oficial en formato Word con los datos de la imposibilidad. El ejecutivo puede descargar el documento individual o un ZIP con multiples cartas.">
+                <div class="bpmn-gateway" title="¿El negocio procede?"><span>?</span></div>
+                <div class="arrow"></div>
+                <span class="branch">solicita →</span>
+
+                <div class="bpmn-task task-request" data-tip="Si falta informacion, el ejecutivo solicita correccion a la firma (con nota y adjunto opcional). El negocio vuelve a 'pendiente' y se notifica.">
                     <div class="task-code">EJE-C</div>
-                    <div class="task-name">Generar Carta Word</div>
-                    <div class="task-ans">Doc / ZIP</div>
+                    <div class="task-name">Solicita corrección → Pendiente</div>
                 </div>
                 <div class="arrow"></div>
 
-                <div class="bpmn-task task-exec" data-tip="Envia la carta por el canal correspondiente (correspondencia oficial, email, fisico) al cliente. Plantilla: atencion solicitud radicado DS XXXX, predio ubicado en XX, subsanacion requerida.">
+                <div class="bpmn-task task-approval" data-tip="Si el negocio no procede, lo marca como rechazado (estado 'rechazado'): fija tipo_negacion=rechazo, clasificacion INSO y guarda el motivo.">
                     <div class="task-code">EJE-D</div>
-                    <div class="task-name">Enviar Carta Cliente</div>
-                    <div class="task-ans">Plantilla Oficial</div>
+                    <div class="task-name">Rechaza el negocio</div>
                 </div>
                 <div class="arrow"></div>
-
-                <div class="bpmn-task task-finance" data-tip="Marca la carta como enviada. Estado final: 'Carta Enviada'. El ciclo se cierra y la tarea se marca como finalizada en el sistema.">
-                    <div class="task-code">EJE-E</div>
-                    <div class="task-name">Marcar Enviada</div>
-                    <div class="task-ans">Estado Final</div>
-                </div>
-                <div class="arrow"></div>
-
-                <div class="bpmn-end"><i class="fas fa-stop"></i></div>
+                <div class="bpmn-end"><i class="fas fa-xmark"></i><span class="end-label">Rechazado</span></div>
             </div>
         </div>
 
-        <!-- LANE 5: SISTEMA (AI / IA) -->
+        <!-- LANE 5: MESA DE AYUDA -->
         <div class="swimlane">
             <div class="lane-label">
-                <div class="icon" style="background: rgba(6,182,212,0.15); color: var(--cyan)"><i class="fas fa-robot"></i></div>
-                <div class="name">Sistema / IA</div>
-                <div class="sub">Asistente GEMA<br>Servicios automaticos<br>Auditoria</div>
+                <div class="icon" style="background: rgba(249,115,22,0.15); color: var(--orange)"><i class="fas fa-headset"></i></div>
+                <div class="name">Mesa de Ayuda</div>
+                <div class="sub">Soporte y<br>escalamiento</div>
             </div>
             <div class="lane-content">
-                <div class="bpmn-task task-exec" data-tip="Envio automatico por SendGrid (email) y UltraMsg (WhatsApp) segun preferencias del usuario (notify_email / notify_whatsapp). Cada envio se registra en NotificationLog para auditoria.">
-                    <div class="task-code">SYS-A</div>
-                    <div class="task-name">Motor Notificaciones</div>
-                    <div class="task-ans">Log Auditoria</div>
+                <div class="bpmn-task task-request" data-tip="Cualquier rol puede abrir un TICKET de soporte (reportar error, escalar un caso, pedir ayuda) desde su panel, con evidencia adjunta opcional.">
+                    <div class="task-code">MES-A</div>
+                    <div class="task-name">Recibe ticket</div>
                 </div>
                 <div class="arrow"></div>
 
-                <div class="bpmn-task task-exec" data-tip="Asistente IA (GEMA) con Gemini 2.0 Flash. Responde preguntas contextuales sobre tareas, procesos, estados. Utiliza RAG con documentacion interna para precision. Configurable desde admin.">
-                    <div class="task-code">SYS-B</div>
-                    <div class="task-name">Asistente GEMA (IA)</div>
-                    <div class="task-ans">Gemini + RAG</div>
+                <div class="bpmn-task task-approval" data-tip="Si el ticket esta vinculado a una orden, el negocio pasa a estado 'escalado' y se notifica a los administradores.">
+                    <div class="task-code">MES-B</div>
+                    <div class="task-name">Escala caso → Escalado</div>
+                    <div class="task-ans">Notifica admins</div>
                 </div>
                 <div class="arrow"></div>
 
-                <div class="bpmn-task task-exec" data-tip="Service Registry configurable en DB (SendGrid, UltraMsg, Gemini). El admin puede actualizar API keys desde la UI sin redeploys. Fallback automatico a variables de entorno.">
-                    <div class="task-code">SYS-C</div>
-                    <div class="task-name">Service Registry</div>
-                    <div class="task-ans">Config DB-first</div>
+                <div class="bpmn-task task-exec" data-tip="La Mesa de Ayuda resuelve el ticket y el caso regresa al flujo normal en el estado que corresponda.">
+                    <div class="task-code">MES-C</div>
+                    <div class="task-name">Resuelve y regresa al flujo</div>
                 </div>
+                <div class="arrow"></div>
+                <div class="bpmn-end ok"><i class="fas fa-circle-check"></i><span class="end-label">Resuelto</span></div>
             </div>
         </div>
     </div>
 
-    <!-- STATES SECTION -->
-    <div class="section-title">
-        <i class="fas fa-flag"></i> Estados de la Tarea (Workflow Detallado)
-    </div>
-    <p class="section-sub">Estados configurables desde admin/catalogos. Cada estado tiene color propio que se refleja en los dashboards.</p>
-
-    <div class="states-strip">
-        <div class="state-card" style="border-color: #94a3b8;">
-            <div class="state-name" style="color: #94a3b8;">Pendiente</div>
-            <div class="state-desc">Recien cargada. Esperando gestion de la firma.</div>
-        </div>
-        <div class="state-card" style="border-color: #60a5fa;">
-            <div class="state-name" style="color: #60a5fa;">Recibida</div>
-            <div class="state-desc">La firma confirmo recepcion.</div>
-        </div>
-        <div class="state-card" style="border-color: #3b82f6;">
-            <div class="state-name" style="color: #3b82f6;">Validada</div>
-            <div class="state-desc">Gestor valido los datos entregados.</div>
-        </div>
-        <div class="state-card" style="border-color: #ef4444;">
-            <div class="state-name" style="color: #ef4444;">Rechazada</div>
-            <div class="state-desc">Gestor rechazo. Ciclo cerrado con motivo.</div>
-        </div>
-        <div class="state-card" style="border-color: #f59e0b;">
-            <div class="state-name" style="color: #f59e0b;">Devuelta para ajustes</div>
-            <div class="state-desc">Requiere subsanacion por parte de la firma.</div>
-        </div>
-        <div class="state-card" style="border-color: #10b981;">
-            <div class="state-name" style="color: #10b981;">Gestionado</div>
-            <div class="state-desc">Firma entrego evidencia. Pendiente validacion.</div>
-        </div>
-        <div class="state-card" style="border-color: #22c55e;">
-            <div class="state-name" style="color: #22c55e;">Cerrada</div>
-            <div class="state-desc">Ciclo completo sin carta al cliente.</div>
-        </div>
-        <div class="state-card" style="border-color: #8b5cf6;">
-            <div class="state-name" style="color: #8b5cf6;">Carta Pend. Revision</div>
-            <div class="state-desc">Firma diligencio datos, ejecutivo debe revisar.</div>
-        </div>
-        <div class="state-card" style="border-color: #059669;">
-            <div class="state-name" style="color: #059669;">Carta Enviada</div>
-            <div class="state-desc">Ejecutivo envio carta al cliente. Cierre final.</div>
-        </div>
+    <!-- TASK-TYPE LEGEND -->
+    <div style="display:flex; justify-content:center; gap:24px; margin-top:30px; flex-wrap:wrap; animation: fadeUp 1.6s ease">
+        <div style="display:flex;align-items:center;gap:8px;font-size:11px"><div style="width:16px;height:16px;border-radius:4px;background:rgba(34,197,94,0.2);border:1.5px solid rgba(34,197,94,0.4)"></div><span style="color:var(--muted)">Trabajo de la firma</span></div>
+        <div style="display:flex;align-items:center;gap:8px;font-size:11px"><div style="width:16px;height:16px;border-radius:4px;background:rgba(59,130,246,0.2);border:1.5px solid rgba(59,130,246,0.4)"></div><span style="color:var(--muted)">Solicitud / Notificación</span></div>
+        <div style="display:flex;align-items:center;gap:8px;font-size:11px"><div style="width:16px;height:16px;border-radius:4px;background:rgba(245,158,11,0.2);border:1.5px solid rgba(245,158,11,0.4)"></div><span style="color:var(--muted)">Validación / Gate</span></div>
+        <div style="display:flex;align-items:center;gap:8px;font-size:11px"><div style="width:16px;height:16px;border-radius:4px;background:rgba(139,92,246,0.2);border:1.5px solid rgba(139,92,246,0.4)"></div><span style="color:var(--muted)">Gestión / Coordinación</span></div>
+        <div style="display:flex;align-items:center;gap:8px;font-size:11px"><div style="width:16px;height:16px;border:2px solid var(--yellow);transform:rotate(45deg)"></div><span style="color:var(--muted)">Gateway (decisión)</span></div>
     </div>
 
-    <!-- KEY FIELDS -->
-    <div class="section-title">
-        <i class="fas fa-key"></i> Campos Clave del Sistema
-    </div>
-    <p class="section-sub">Estos campos son CRITICOS para el correcto funcionamiento y filtrado de informacion.</p>
-
-    <div class="states-strip">
-        <div class="state-card" style="border-color: var(--yellow);">
-            <div class="state-name" style="color: var(--yellow);">BP_Firma</div>
-            <div class="state-desc">ID del contratista/firma. FILTRA que cartera ve cada usuario.</div>
-        </div>
-        <div class="state-card" style="border-color: var(--accent);">
-            <div class="state-name" style="color: var(--accent);">Tipo_Asignacion</div>
-            <div class="state-desc">'firma' (duena) vs 'contratista' (subcontratado).</div>
-        </div>
-        <div class="state-card" style="border-color: var(--green);">
-            <div class="state-name" style="color: var(--green);">Filial</div>
-            <div class="state-desc">Filial/sociedad duena del negocio. Visible al contratista.</div>
-        </div>
-        <div class="state-card" style="border-color: var(--purple);">
-            <div class="state-name" style="color: var(--purple);">Codigo_Imposibilidad</div>
-            <div class="state-desc">Codigo numerico Power BI (1-172 tipos de anomalia).</div>
-        </div>
-        <div class="state-card" style="border-color: var(--pink);">
-            <div class="state-name" style="color: var(--pink);">Tarea</div>
-            <div class="state-desc">'carta' o 'estandar'. Define si requiere documento al cliente.</div>
-        </div>
-    </div>
-
-    <!-- LEGEND -->
-    <div style="display:flex; justify-content:center; gap:24px; margin-top:40px; flex-wrap:wrap; animation: fadeUp 1.6s ease">
-        <div style="display:flex;align-items:center;gap:8px;font-size:11px">
-            <div style="width:16px;height:16px;border-radius:4px;background:rgba(16,185,129,0.2);border:1.5px solid rgba(16,185,129,0.4)"></div>
-            <span style="color:var(--muted)">Trabajo de campo</span>
-        </div>
-        <div style="display:flex;align-items:center;gap:8px;font-size:11px">
-            <div style="width:16px;height:16px;border-radius:4px;background:rgba(59,130,246,0.2);border:1.5px solid rgba(59,130,246,0.4)"></div>
-            <span style="color:var(--muted)">Solicitud / Request</span>
-        </div>
-        <div style="display:flex;align-items:center;gap:8px;font-size:11px">
-            <div style="width:16px;height:16px;border-radius:4px;background:rgba(245,158,11,0.2);border:1.5px solid rgba(245,158,11,0.4)"></div>
-            <span style="color:var(--muted)">Gate de aprobacion</span>
-        </div>
-        <div style="display:flex;align-items:center;gap:8px;font-size:11px">
-            <div style="width:16px;height:16px;border-radius:4px;background:rgba(139,92,246,0.2);border:1.5px solid rgba(139,92,246,0.4)"></div>
-            <span style="color:var(--muted)">Gestion / Ejecucion</span>
-        </div>
-        <div style="display:flex;align-items:center;gap:8px;font-size:11px">
-            <div style="width:16px;height:16px;border-radius:4px;background:rgba(236,72,153,0.2);border:1.5px solid rgba(236,72,153,0.4)"></div>
-            <span style="color:var(--muted)">Financiero / Cierre</span>
-        </div>
-        <div style="display:flex;align-items:center;gap:8px;font-size:11px">
-            <div style="width:16px;height:16px;border:2px solid var(--yellow);transform:rotate(45deg)"></div>
-            <span style="color:var(--muted)">Gateway (decision)</span>
-        </div>
+    <!-- FEATURES -->
+    <div class="features">
+        <div class="feature"><i class="fas fa-bell" style="color:var(--blue)"></i><div><div class="ft">Notificaciones Email + WhatsApp</div><div class="fd">Avisos automáticos agrupados por BP en cada cambio relevante (SendGrid + UltraMsg).</div></div></div>
+        <div class="feature"><i class="fas fa-layer-group" style="color:var(--purple)"></i><div><div class="ft">Clasificación ZACO / INSO</div><div class="fd">ZACO = imposibilidades/construcción · INSO = rechazos/interventorías. Catálogo configurable.</div></div></div>
+        <div class="feature"><i class="fas fa-barcode" style="color:var(--pink)"></i><div><div class="ft">Catálogo de motivos (~310 códigos)</div><div class="fd">Cada negocio enlaza un código de anomalía; la firma ve la descripción del motivo en su cartera.</div></div></div>
+        <div class="feature"><i class="fas fa-clock" style="color:var(--yellow)"></i><div><div class="ft">Contadores de días &amp; ANS</div><div class="fd">Días en cartera por negocio y ANS de 6 días hábiles para comunicaciones sin respuesta.</div></div></div>
+        <div class="feature"><i class="fas fa-shield-halved" style="color:var(--green)"></i><div><div class="ft">Soportes persistentes + respaldo</div><div class="fd">Archivos guardados en base de datos, con respaldo .zip descargable y restauración.</div></div></div>
+        <div class="feature"><i class="fas fa-robot" style="color:var(--cyan)"></i><div><div class="ft">Asistente IA (Gemini)</div><div class="fd">Apoyo conversacional contextual según el rol, integrado en la plataforma.</div></div></div>
     </div>
 
     <!-- FOOTER -->
     <div class="footer">
-        <div class="brand">SGI Vanti &mdash; Sistema de Gestion Integral de Imposibilidades</div>
-        <p>Version 2.0 | Arquitectura Flask Blueprints + PostgreSQL + SmartFlow Service Registry</p>
-        <p style="margin-top:8px">Notacion BPMN 2.0 &mdash; Documentacion viva: se actualiza al cambiar el proceso</p>
+        <div class="brand">SGI Vanti &mdash; Sistema de Gestión de Imposibilidades</div>
+        <p>Notación BPMN 2.0 &mdash; Proceso de Gestión de Imposibilidades y Rechazos de Conexión de Gas</p>
+        <p style="margin-top:8px">Carriles por rol · Estados controlados · Trazabilidad y notificaciones automáticas</p>
     </div>
 </div>
 
+<!-- TOOLTIP -->
 <div class="tooltip" id="tooltip">
     <h4 id="tip-title"></h4>
     <p id="tip-desc"></p>
@@ -776,25 +441,20 @@ const tipDesc = document.getElementById('tip-desc');
 const tipAns = document.getElementById('tip-ans');
 
 document.querySelectorAll('.bpmn-task').forEach(task => {
-    task.addEventListener('mouseenter', (e) => {
+    task.addEventListener('mouseenter', () => {
         const tip = task.dataset.tip;
         const ans = task.dataset.ans;
         if (!tip) return;
-
-        tipTitle.textContent = task.querySelector('.task-code').textContent + ' - ' + task.querySelector('.task-name').textContent;
+        tipTitle.textContent = task.querySelector('.task-code').textContent + ' — ' + task.querySelector('.task-name').textContent;
         tipDesc.textContent = tip;
         tipAns.textContent = ans || '';
         tipAns.style.display = ans ? 'block' : 'none';
-
         const rect = task.getBoundingClientRect();
         tooltip.style.left = Math.min(rect.left, window.innerWidth - 340) + 'px';
         tooltip.style.top = (rect.bottom + 10) + 'px';
         tooltip.classList.add('show');
     });
-
-    task.addEventListener('mouseleave', () => {
-        tooltip.classList.remove('show');
-    });
+    task.addEventListener('mouseleave', () => tooltip.classList.remove('show'));
 });
 
 const observer = new IntersectionObserver((entries) => {
@@ -802,12 +462,12 @@ const observer = new IntersectionObserver((entries) => {
         if (entry.isIntersecting) {
             const el = entry.target.querySelector('.number');
             if (el && !el.dataset.animated) {
-                const target = el.textContent;
-                const num = parseInt(target.replace(/\D/g,''));
-                if (!isNaN(num) && num > 0) {
+                const raw = el.textContent.trim();
+                const num = parseInt(raw);
+                const suffix = raw.replace(/[0-9]/g, '');
+                if (!isNaN(num)) {
                     let current = 0;
                     const step = Math.max(1, Math.ceil(num / 30));
-                    const suffix = target.replace(/[0-9]/g,'');
                     const interval = setInterval(() => {
                         current += step;
                         if (current >= num) { current = num; clearInterval(interval); }
@@ -819,7 +479,6 @@ const observer = new IntersectionObserver((entries) => {
         }
     });
 }, { threshold: 0.5 });
-
 document.querySelectorAll('.kpi').forEach(kpi => observer.observe(kpi));
 </script>
 
